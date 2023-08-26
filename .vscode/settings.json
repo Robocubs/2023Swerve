@@ -1,0 +1,50 @@
+{
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.server.launchMode": "Standard",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "bin/": true,
+    "**/.classpath": true,
+    "**/.project": true,
+    "**/.settings": true,
+    "**/.factorypath": true,
+    "**/*~": true
+  },
+  "java.test.config": [
+    {
+      "name": "WPIlibUnitTests",
+      "workingDirectory": "${workspaceFolder}/build/jni/release",
+      "vmargs": [
+        "-Djava.library.path=${workspaceFolder}/build/jni/release"
+      ],
+      "env": {
+        "LD_LIBRARY_PATH": "${workspaceFolder}/build/jni/release",
+        "DYLD_LIBRARY_PATH": "${workspaceFolder}/build/jni/release"
+      }
+    },
+  ],
+  "java.test.defaultConfig": "WPIlibUnitTests",
+  "editor.formatOnSave": true,
+  "files.eol": "\n",
+  "java.format.enabled": false,
+  "[java]": {
+    "files.trimTrailingWhitespace": false,
+    "spotlessGradle.format.enable": true,
+    "editor.defaultFormatter": "richardwillis.vscode-spotless-gradle",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.spotlessGradle": true
+    }
+  },
+  "[json]": {
+    "files.insertFinalNewline": true,
+    "editor.indentSize": 2
+  },
+  "[jsonc]": {
+    "files.insertFinalNewline": true,
+    "editor.indentSize": 2
+  }
+}
