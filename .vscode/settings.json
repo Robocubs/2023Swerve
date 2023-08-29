@@ -46,5 +46,13 @@
   "[jsonc]": {
     "files.insertFinalNewline": true,
     "editor.indentSize": 2
-  }
+  },
+  "cSpell.words": [
+    "dtheta",
+    "Setpoint",
+    "Setpoints",
+    "teleop",
+    "Uncomitted",
+    "WPILOG"
+  ]
 }
