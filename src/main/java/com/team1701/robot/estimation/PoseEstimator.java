@@ -19,7 +19,6 @@ public class PoseEstimator {
             .toArray(SwerveModulePosition[]::new);
     private SwerveDrivePoseEstimator mPoseEstimator = new SwerveDrivePoseEstimator(
             Constants.Drive.kKinematics, mGyroAngle, mModulePositions, GeometryUtil.kPoseIdentity);
-    private Pose2d mPose = new Pose2d();
 
     public static PoseEstimator getInstance() {
         if (mInstance == null) {
@@ -32,7 +31,7 @@ public class PoseEstimator {
     private PoseEstimator() {}
 
     public Pose2d get() {
-        return mPose;
+        return mPoseEstimator.getEstimatedPosition();
     }
 
     public void update(Rotation2d gyroAngle, SwerveModulePosition[] modulePositions) {
@@ -50,10 +49,12 @@ public class PoseEstimator {
     }
 
     public void resetPosition(Rotation2d gyroAngle, SwerveModulePosition[] modulePositions, Pose2d pose) {
+        mGyroAngle = gyroAngle;
+        mModulePositions = modulePositions;
         mPoseEstimator.resetPosition(gyroAngle, modulePositions, pose);
     }
 
     public void outputTelemetry() {
-        Logger.getInstance().recordOutput("Drive/Pose", mPoseEstimator.getEstimatedPosition());
+        Logger.getInstance().recordOutput("PoseEstimator/Pose", mPoseEstimator.getEstimatedPosition());
     }
 }

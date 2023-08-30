@@ -17,8 +17,8 @@ public class SwerveModuleIOSim implements SwerveModuleIO {
     private final PIDController mSteerPID = new PIDController(0.0, 0.0, 0.0, Constants.kLoopPeriodSeconds);
 
     private double mDriveVelocityRadPerSec = 0.0;
+    private double mSteerRelativePositionRad = 0.0;
     private double mSteerAbsolutePositionRad = Math.random() * 2.0 * Math.PI;
-    private double mSteerRelativePositionRad = mSteerAbsolutePositionRad;
 
     public SwerveModuleIOSim() {
         System.out.println("[Init] Creating ModuleIOSim");

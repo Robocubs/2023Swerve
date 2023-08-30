@@ -83,6 +83,7 @@ public class Drive extends Subsystem {
         }
 
         updateInputs();
+        zeroModules();
         setModuleSetpointsFromMeasured();
     }
 
@@ -99,9 +100,25 @@ public class Drive extends Subsystem {
     }
 
     public void zeroGyroscope(Rotation2d rotation) {
-        var normalizedRadians = MathUtil.inputModulus(rotation.getRadians(), -Math.PI, Math.PI);
+        var normalizedRadians = MathUtil.angleModulus(rotation.getRadians());
         mYawOffset = mGyroInputs.yawPositionRad - normalizedRadians;
         mFieldRelativeHeading = new Rotation2d(normalizedRadians);
+    }
+
+    private void zeroModules() {
+        for (var module : mModules) {
+            module.zeroSteeringMotor();
+        }
+
+        mMeasuredModuleStates = Stream.of(mModules).map(SwerveModule::getState).toArray(SwerveModuleState[]::new);
+        mMeasuredModulePositions =
+                Stream.of(mModules).map(SwerveModule::getPosition).toArray(SwerveModulePosition[]::new);
+
+        PoseEstimator.getInstance()
+                .resetPosition(
+                        new Rotation2d(mGyroInputs.yawPositionRad),
+                        mMeasuredModulePositions,
+                        PoseEstimator.getInstance().get());
     }
 
     private void setModuleSetpointsFromMeasured() {

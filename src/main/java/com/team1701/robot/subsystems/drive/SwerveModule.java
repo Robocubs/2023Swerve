@@ -17,6 +17,7 @@ public class SwerveModule extends Subsystem {
     private double mDesiredVelocityRadPerSec;
     private Rotation2d mDesiredAngle = GeometryUtil.kRotationIdentity;
     private Rotation2d mMeasuredAngle = GeometryUtil.kRotationIdentity;
+    private double mAngleOffsetRadians;
     private boolean mOrienting;
 
     public SwerveModule(int index, SwerveModuleIO io) {
@@ -49,12 +50,20 @@ public class SwerveModule extends Subsystem {
         mOrienting = true;
     }
 
+    public void zeroSteeringMotor() {
+        mAngleOffsetRadians = mInputs.steerAbsolutePositionRad
+                - MathUtil.angleModulus(mInputs.steerPositionRad * Constants.Drive.kSteerReduction);
+        mMeasuredAngle = new Rotation2d(MathUtil.angleModulus(
+                mInputs.steerPositionRad * Constants.Drive.kSteerReduction + mAngleOffsetRadians));
+    }
+
     @Override
     public void readPeriodicInputs() {
         mIO.updateInputs(mInputs);
         Logger.getInstance().processInputs("Drive/Module/" + mIndex, mInputs);
         mMeasuredAngle =
-                new Rotation2d(MathUtil.angleModulus(mInputs.steerPositionRad * Constants.Drive.kSteerReduction));
+                new Rotation2d(MathUtil.angleModulus(mInputs.steerPositionRad * Constants.Drive.kSteerReduction)
+                        + mAngleOffsetRadians);
     }
 
     @Override
