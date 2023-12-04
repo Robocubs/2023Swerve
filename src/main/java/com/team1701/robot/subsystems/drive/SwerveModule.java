@@ -50,11 +50,19 @@ public class SwerveModule extends Subsystem {
         mOrienting = true;
     }
 
+    public void setDriveBrakeMode(boolean enable) {
+        mIO.setDriveBrakeMode(enable);
+    }
+
+    public void setSteerBrakeMode(boolean enable) {
+        mIO.setSteerBrakeMode(enable);
+    }
+
     public void zeroSteeringMotor() {
-        mAngleOffsetRadians = mInputs.steerAbsolutePositionRad
-                - MathUtil.angleModulus(mInputs.steerPositionRad * Constants.Drive.kSteerReduction);
-        mMeasuredAngle = new Rotation2d(MathUtil.angleModulus(
-                mInputs.steerPositionRad * Constants.Drive.kSteerReduction + mAngleOffsetRadians));
+        // mAngleOffsetRadians = mInputs.steerAbsolutePositionRad
+        //         - MathUtil.angleModulus(mInputs.steerPositionRad * Constants.Drive.kSteerReduction);
+        // mMeasuredAngle = new Rotation2d(MathUtil.angleModulus(
+        //         mInputs.steerPositionRad * Constants.Drive.kSteerReduction + mAngleOffsetRadians));
     }
 
     @Override
@@ -64,6 +72,7 @@ public class SwerveModule extends Subsystem {
         mMeasuredAngle =
                 new Rotation2d(MathUtil.angleModulus(mInputs.steerPositionRad * Constants.Drive.kSteerReduction)
                         + mAngleOffsetRadians);
+        Logger.getInstance().recordOutput("Drive/Module/MeasuredAngle", mAngleOffsetRadians);
     }
 
     @Override

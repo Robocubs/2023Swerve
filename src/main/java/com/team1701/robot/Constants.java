@@ -53,7 +53,19 @@ public final class Constants {
 
             switch (Configuration.getRobot()) {
                 case SWERVE_BOT:
-                    throw new UnsupportedOperationException("Not implemented yet");
+                    kWheelRadiusMeters = Units.inchesToMeters(2);
+                    driveTrackWidthMeters = 0.465;
+                    driveWheelbaseMeters = 0.465;
+                    driveMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
+                    kDriveReduction = kL3DriveReduction;
+                    kSteerReduction = kMk4iSteerReduction;
+                    kMotorsInverted = true;
+                    kDriveKf.initDefault(0.0);
+                    kDriveKp.initDefault(0.0);
+                    kDriveKd.initDefault(0);
+                    kSteerKp.initDefault(0.0);
+                    kSteerKd.initDefault(0);
+                    break;
                 case SIMULATION_BOT:
                     kWheelRadiusMeters = Units.inchesToMeters(2);
                     driveTrackWidthMeters = 0.5;

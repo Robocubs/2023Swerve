@@ -18,4 +18,8 @@ public interface SwerveModuleIO {
     public default void setWithVelocity(double driveVelocityRadPerSec, Rotation2d steerAngle) {}
 
     public default void setWithPercentOutput(double drivePercentage, Rotation2d steerAngle) {}
+
+    public default void setDriveBrakeMode(boolean enable) {}
+
+    public default void setSteerBrakeMode(boolean enable) {}
 }
