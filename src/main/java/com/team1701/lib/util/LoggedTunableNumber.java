@@ -11,7 +11,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
  */
 public class LoggedTunableNumber {
     private static final String kTableKey = "TunableNumbers";
-    private static boolean kTuningEnabled = false;
+    private static boolean kTuningEnabled = true;
 
     private final String mKey;
     private boolean mHasDefault = false;
@@ -29,7 +29,7 @@ public class LoggedTunableNumber {
      * @param dashboardKey Key on dashboard
      */
     public LoggedTunableNumber(String dashboardKey) {
-        this.mKey = kTableKey + "/" + dashboardKey;
+        mKey = kTableKey + "/" + dashboardKey;
     }
 
     /**

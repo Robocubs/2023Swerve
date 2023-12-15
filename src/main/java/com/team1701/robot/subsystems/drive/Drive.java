@@ -61,7 +61,7 @@ public class Drive extends Subsystem {
                                 true,
                                 Constants.Drive.kMotorsInverted,
                                 Constants.Drive.kSteerReduction,
-                                Rotation2d.fromRadians(1.75)),
+                                Rotation2d.fromRadians(-4.54)),
                         new SwerveModuleIOSparkMax(
                                 12,
                                 13,
@@ -69,7 +69,7 @@ public class Drive extends Subsystem {
                                 true,
                                 Constants.Drive.kMotorsInverted,
                                 Constants.Drive.kSteerReduction,
-                                Rotation2d.fromRadians(5.14)),
+                                Rotation2d.fromRadians(-4.28)),
                         new SwerveModuleIOSparkMax(
                                 16,
                                 17,
@@ -77,7 +77,7 @@ public class Drive extends Subsystem {
                                 true,
                                 Constants.Drive.kMotorsInverted,
                                 Constants.Drive.kSteerReduction,
-                                Rotation2d.fromRadians(6.17)),
+                                Rotation2d.fromRadians(-0.18)),
                         new SwerveModuleIOSparkMax(
                                 14,
                                 15,
@@ -85,7 +85,7 @@ public class Drive extends Subsystem {
                                 true,
                                 Constants.Drive.kMotorsInverted,
                                 Constants.Drive.kSteerReduction,
-                                Rotation2d.fromRadians(1.14)),
+                                Rotation2d.fromRadians(-2.00)),
                     };
                     break;
                 case SIMULATION_BOT:
@@ -142,7 +142,7 @@ public class Drive extends Subsystem {
         mFieldRelativeHeading = new Rotation2d(normalizedRadians);
     }
 
-    private void zeroModules() {
+    public void zeroModules() {
         for (var module : mModules) {
             module.zeroSteeringMotor();
         }
@@ -191,7 +191,7 @@ public class Drive extends Subsystem {
             public void onStart(double timestamp) {
                 setModuleSetpointsFromMeasured();
                 setVelocity(new ChassisSpeeds());
-                mKinematicLimits = Constants.Drive.kFastKinematicLimits;
+                mKinematicLimits = Constants.Drive.kUncappedKinematicLimits;
             }
 
             @Override
