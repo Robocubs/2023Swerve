@@ -110,6 +110,7 @@ public class Robot extends LoggedRobot {
 
     @Override
     public void teleopInit() {
+        mDrive.zeroModules();
         mDisabledLooper.stop();
         mControllerManager.resetHandlers();
         mEnabledLooper.start();

@@ -5,11 +5,13 @@ import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
+import com.team1701.lib.util.SparkMaxUtil;
 import com.team1701.robot.Constants;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.AnalogEncoder;
+import org.littletonrobotics.junction.Logger;
 
 public class SwerveModuleIOSparkMax implements SwerveModuleIO {
     private final CANSparkMax mDriveMotor;
@@ -20,6 +22,7 @@ public class SwerveModuleIOSparkMax implements SwerveModuleIO {
     private final SparkMaxPIDController mSteerController;
     private final AnalogEncoder mSteerAbsoluteEncoder;
     private final double mSteerReduction;
+    private final int mSteerId;
 
     public SwerveModuleIOSparkMax(
             int driveId,
@@ -29,6 +32,7 @@ public class SwerveModuleIOSparkMax implements SwerveModuleIO {
             boolean steerInverted,
             double steerReduction,
             Rotation2d steerEncoderOffset) {
+        mSteerId = steerId;
         mDriveMotor = new CANSparkMax(driveId, MotorType.kBrushless);
         mSteerMotor = new CANSparkMax(steerId, MotorType.kBrushless);
         mDriveEncoder = mDriveMotor.getEncoder();
@@ -49,7 +53,7 @@ public class SwerveModuleIOSparkMax implements SwerveModuleIO {
 
         for (var i = 0; i < 4; i++) {
             mDriveMotor.setInverted(driveInverted);
-            mDriveMotor.setSmartCurrentLimit(40);
+            mDriveMotor.setSmartCurrentLimit(80);
             mDriveMotor.enableVoltageCompensation(12.0);
 
             mDriveEncoder.setPosition(0.0);
@@ -84,15 +88,30 @@ public class SwerveModuleIOSparkMax implements SwerveModuleIO {
     }
 
     public void updateInputs(SwerveModuleInputs inputs) {
-        inputs.drivePositionRad = Units.rotationsToRadians(mDriveEncoder.getPosition());
-        inputs.driveVelocityRadPerSec = Units.rotationsToRadians(mDriveEncoder.getVelocity());
-        inputs.steerAbsolutePositionRad = Units.rotationsToRadians(mSteerAbsoluteEncoder.get());
-        inputs.steerPositionRad = Units.rotationsToRadians(mSteerEncoder.getPosition());
-        inputs.steerVelocityRadPerSec = Units.rotationsToRadians(mSteerEncoder.getVelocity());
+        inputs.drivePositionRad =
+                Units.rotationsToRadians(SparkMaxUtil.cleanSparkMaxValue(0.0, mDriveEncoder.getPosition()));
+        inputs.driveVelocityRadPerSec =
+                Units.rotationsToRadians(SparkMaxUtil.cleanSparkMaxValue(0.0, mDriveEncoder.getVelocity()) / 60);
+        inputs.steerPositionRad =
+                Units.rotationsToRadians(SparkMaxUtil.cleanSparkMaxValue(0.0, mSteerEncoder.getPosition()));
+        inputs.steerVelocityRadPerSec =
+                Units.rotationsToRadians(SparkMaxUtil.cleanSparkMaxValue(0.0, mSteerEncoder.getVelocity()) / 60);
+
+        var absoluteEncoderRotations = mSteerAbsoluteEncoder.get();
+        inputs.steerAbsolutePositionRad = Units.rotationsToRadians(
+                absoluteEncoderRotations == Double.NaN || absoluteEncoderRotations == Double.POSITIVE_INFINITY
+                        ? 0.0
+                        : absoluteEncoderRotations);
+
+        Logger.getInstance()
+                .recordOutput("SwerveModule/" + mSteerId + "/RawSteerMeasured", mSteerEncoder.getPosition());
     }
 
     public void setWithVelocity(double driveVelocityRadPerSec, Rotation2d steerAngle) {
         var hashCode = hashCode();
+        if (Constants.Drive.kDriveKf.hasChanged(hashCode)) {
+            mDriveController.setFF(Constants.Drive.kDriveKf.get());
+        }
         if (Constants.Drive.kDriveKp.hasChanged(hashCode)) {
             mDriveController.setP(Constants.Drive.kDriveKp.get());
         }
@@ -101,7 +120,7 @@ public class SwerveModuleIOSparkMax implements SwerveModuleIO {
         }
 
         mDriveController.setReference(
-                Units.radiansToRotations(driveVelocityRadPerSec), CANSparkMax.ControlType.kVelocity);
+                Units.radiansToRotations(driveVelocityRadPerSec) * 60, CANSparkMax.ControlType.kVelocity);
         setSteerAngle(steerAngle);
     }
 
@@ -119,7 +138,11 @@ public class SwerveModuleIOSparkMax implements SwerveModuleIO {
             mSteerController.setD(Constants.Drive.kSteerKd.get());
         }
 
-        mSteerController.setReference(angle.getRotations() / mSteerReduction, CANSparkMax.ControlType.kPosition);
+        mSteerController.setReference(
+                MathUtil.inputModulus(angle.getRotations(), 0.0, 1.0) / mSteerReduction,
+                CANSparkMax.ControlType.kPosition);
+        Logger.getInstance()
+                .recordOutput("SwerveModule/" + mSteerId + "/RawSteerRequest", angle.getRotations() / mSteerReduction);
     }
 
     public void setDriveBrakeMode(boolean enable) {
