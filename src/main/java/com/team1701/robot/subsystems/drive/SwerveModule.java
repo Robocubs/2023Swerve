@@ -1,6 +1,7 @@
 package com.team1701.robot.subsystems.drive;
 
 import com.team1701.lib.util.GeometryUtil;
+import com.team1701.lib.util.Util;
 import com.team1701.robot.Constants;
 import com.team1701.robot.subsystems.Subsystem;
 import edu.wpi.first.math.MathUtil;
@@ -38,7 +39,8 @@ public class SwerveModule extends Subsystem {
     }
 
     public void setState(SwerveModuleState state) {
-        var optimizedState = SwerveModuleState.optimize(state, mMeasuredAngle);
+        // var optimizedState = SwerveModuleState.optimize(state, mMeasuredAngle);
+        var optimizedState = state;
         mDesiredVelocityRadPerSec = optimizedState.speedMetersPerSecond / Constants.Drive.kWheelRadiusMeters;
         mDesiredAngle = optimizedState.angle;
         mOrienting = false;
@@ -59,10 +61,10 @@ public class SwerveModule extends Subsystem {
     }
 
     public void zeroSteeringMotor() {
-        // mAngleOffsetRadians = mInputs.steerAbsolutePositionRad
-        //         - MathUtil.angleModulus(mInputs.steerPositionRad * Constants.Drive.kSteerReduction);
-        // mMeasuredAngle = new Rotation2d(MathUtil.angleModulus(
-        //         mInputs.steerPositionRad * Constants.Drive.kSteerReduction + mAngleOffsetRadians));
+        mAngleOffsetRadians = MathUtil.angleModulus(
+                mInputs.steerAbsolutePositionRad - mInputs.steerPositionRad * Constants.Drive.kSteerReduction);
+        mMeasuredAngle = new Rotation2d(MathUtil.angleModulus(
+                mInputs.steerPositionRad * Constants.Drive.kSteerReduction + mAngleOffsetRadians));
     }
 
     @Override
@@ -77,10 +79,13 @@ public class SwerveModule extends Subsystem {
 
     @Override
     public void writePeriodicOutputs() {
-        if (mOrienting) {
-            mIO.setWithPercentOutput(0, mDesiredAngle);
+        if (mOrienting
+                || Util.epsilonEquals(mDesiredVelocityRadPerSec, 0)
+                        && Util.epsilonEquals(mInputs.driveVelocityRadPerSec, 0.0, 0.2)) {
+            mIO.setWithPercentOutput(0, mDesiredAngle.minus(Rotation2d.fromRadians(mAngleOffsetRadians)));
         } else {
-            mIO.setWithVelocity(mDesiredVelocityRadPerSec, mDesiredAngle);
+            mIO.setWithVelocity(
+                    mDesiredVelocityRadPerSec, mDesiredAngle.minus(Rotation2d.fromRadians(mAngleOffsetRadians)));
         }
     }
 
