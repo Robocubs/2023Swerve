@@ -39,10 +39,9 @@ public class SwerveModule extends Subsystem {
     }
 
     public void setState(SwerveModuleState state) {
-        // var optimizedState = SwerveModuleState.optimize(state, mMeasuredAngle);
-        var optimizedState = state;
-        mDesiredVelocityRadPerSec = optimizedState.speedMetersPerSecond / Constants.Drive.kWheelRadiusMeters;
-        mDesiredAngle = optimizedState.angle;
+        mDesiredVelocityRadPerSec =
+                state.speedMetersPerSecond / Constants.Drive.kDriveReduction / Constants.Drive.kWheelRadiusMeters;
+        mDesiredAngle = state.angle;
         mOrienting = false;
     }
 

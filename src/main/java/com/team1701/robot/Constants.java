@@ -60,10 +60,10 @@ public final class Constants {
                     kDriveReduction = kL3DriveReduction;
                     kSteerReduction = kMk4iSteerReduction;
                     kMotorsInverted = true;
-                    kDriveKf.initDefault(0.002);
-                    kDriveKp.initDefault(0.00025);
+                    kDriveKf.initDefault(0.0002);
+                    kDriveKp.initDefault(0.00003);
                     kDriveKd.initDefault(0);
-                    kSteerKp.initDefault(2.0);
+                    kSteerKp.initDefault(1.0);
                     kSteerKd.initDefault(0);
                     break;
                 case SIMULATION_BOT:

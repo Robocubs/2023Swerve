@@ -53,7 +53,7 @@ public class SwerveModuleIOSparkMax implements SwerveModuleIO {
 
         for (var i = 0; i < 4; i++) {
             mDriveMotor.setInverted(driveInverted);
-            mDriveMotor.setSmartCurrentLimit(40);
+            mDriveMotor.setSmartCurrentLimit(80);
             mDriveMotor.enableVoltageCompensation(12.0);
 
             mDriveEncoder.setPosition(0.0);
