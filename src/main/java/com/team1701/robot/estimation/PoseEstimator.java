@@ -6,6 +6,7 @@ import com.team1701.lib.util.GeometryUtil;
 import com.team1701.robot.Constants;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import org.littletonrobotics.junction.Logger;
@@ -56,5 +57,9 @@ public class PoseEstimator {
 
     public void outputTelemetry() {
         Logger.getInstance().recordOutput("PoseEstimator/Pose", mPoseEstimator.getEstimatedPosition());
+    }
+
+    public Pose3d getCurrentPose() {
+        return null;
     }
 }
