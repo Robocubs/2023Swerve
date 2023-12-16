@@ -1,4 +1,4 @@
-package com.team1701.robot.subsystems.drive;
+package com.team1701.lib.drivers.gyros;
 
 import org.littletonrobotics.junction.AutoLog;
 

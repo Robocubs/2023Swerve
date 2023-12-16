@@ -1,4 +1,4 @@
-package com.team1701.robot.subsystems.drive;
+package com.team1701.lib.drivers.gyros;
 
 import java.util.function.Supplier;
 
@@ -6,14 +6,14 @@ import com.team1701.robot.Constants;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 
 public class GyroIOSim implements GyroIO {
-    private Supplier<ChassisSpeeds> mGetChassisSpeeds;
+    private Supplier<ChassisSpeeds> mChassisSpeedsSupplier;
 
-    public GyroIOSim(Supplier<ChassisSpeeds> getChassisSpeeds) {
-        mGetChassisSpeeds = getChassisSpeeds;
+    public GyroIOSim(Supplier<ChassisSpeeds> chassisSpeedsSupplier) {
+        mChassisSpeedsSupplier = chassisSpeedsSupplier;
     }
 
     public void updateInputs(GyroInputs inputs) {
-        var chassisSpeeds = mGetChassisSpeeds.get();
+        var chassisSpeeds = mChassisSpeedsSupplier.get();
         inputs.yawVelocityRadPerSec = chassisSpeeds.omegaRadiansPerSecond;
         inputs.yawPositionRad += chassisSpeeds.omegaRadiansPerSecond * Constants.kLoopPeriodSeconds;
     }

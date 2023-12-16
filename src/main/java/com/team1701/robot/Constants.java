@@ -75,10 +75,10 @@ public final class Constants {
                     kDriveReduction = kL3DriveReduction;
                     kSteerReduction = kMk4iSteerReduction;
                     kMotorsInverted = true;
-                    kDriveKf.initDefault(0.12);
-                    kDriveKp.initDefault(1.8);
+                    kDriveKf.initDefault(0.02);
+                    kDriveKp.initDefault(0.3);
                     kDriveKd.initDefault(0);
-                    kSteerKp.initDefault(23.0);
+                    kSteerKp.initDefault(0.8);
                     kSteerKd.initDefault(0);
                     break;
                 default:

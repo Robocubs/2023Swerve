@@ -3,6 +3,15 @@ package com.team1701.robot.subsystems.drive;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import com.team1701.lib.drivers.encoders.EncoderIO;
+import com.team1701.lib.drivers.encoders.EncoderIOAnalog;
+import com.team1701.lib.drivers.encoders.EncoderIOSim;
+import com.team1701.lib.drivers.gyros.GyroIO;
+import com.team1701.lib.drivers.gyros.GyroIOPigeon2;
+import com.team1701.lib.drivers.gyros.GyroIOSim;
+import com.team1701.lib.drivers.gyros.GyroInputsAutoLogged;
+import com.team1701.lib.drivers.motors.MotorIO;
+import com.team1701.lib.drivers.motors.MotorIOSim;
 import com.team1701.lib.swerve.SwerveSetpoint;
 import com.team1701.lib.swerve.SwerveSetpointGenerator;
 import com.team1701.lib.swerve.SwerveSetpointGenerator.KinematicLimits;
@@ -20,6 +29,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.system.plant.DCMotor;
 import org.littletonrobotics.junction.Logger;
 
 public class Drive extends Subsystem {
@@ -48,54 +58,49 @@ public class Drive extends Subsystem {
 
     private Drive() {
         GyroIO gyroIO = null;
-        SwerveModuleIO[] moduleIOs = null;
+        SwerveModule[] modules = null;
         if (Configuration.getMode() != Mode.REPLAY) {
             switch (Configuration.getRobot()) {
                 case SWERVE_BOT:
                     gyroIO = new GyroIOPigeon2(10);
-                    moduleIOs = new SwerveModuleIO[] {
-                        new SwerveModuleIOSparkMax(
-                                10,
-                                11,
-                                0,
-                                true,
-                                Constants.Drive.kMotorsInverted,
-                                Constants.Drive.kSteerReduction,
-                                Rotation2d.fromRadians(-4.54)),
-                        new SwerveModuleIOSparkMax(
-                                12,
-                                13,
-                                1,
-                                true,
-                                Constants.Drive.kMotorsInverted,
-                                Constants.Drive.kSteerReduction,
-                                Rotation2d.fromRadians(-4.28)),
-                        new SwerveModuleIOSparkMax(
-                                16,
-                                17,
-                                3,
-                                true,
-                                Constants.Drive.kMotorsInverted,
-                                Constants.Drive.kSteerReduction,
-                                Rotation2d.fromRadians(-0.18)),
-                        new SwerveModuleIOSparkMax(
-                                14,
-                                15,
-                                2,
-                                true,
-                                Constants.Drive.kMotorsInverted,
-                                Constants.Drive.kSteerReduction,
-                                Rotation2d.fromRadians(-2.00)),
+                    var configurations = new SwerveModuleConfiguration[] {
+                        new SwerveModuleConfiguration(10, 11, 0),
+                        new SwerveModuleConfiguration(12, 13, 1),
+                        new SwerveModuleConfiguration(16, 17, 3),
+                        new SwerveModuleConfiguration(14, 15, 2),
                     };
+
+                    modules = new SwerveModule[configurations.length];
+                    for (var i = 0; i < modules.length; i++) {
+                        modules[i] = new SwerveModule(
+                                i,
+                                MotorFactory.createDriveMotorIOSparkMax(
+                                        configurations[i].driveId, Constants.Drive.kMotorsInverted),
+                                MotorFactory.createSteerMotorIOSparkMax(
+                                        configurations[i].steerId, Constants.Drive.kMotorsInverted),
+                                new EncoderIOAnalog(configurations[i].steerId));
+                    }
+
                     break;
                 case SIMULATION_BOT:
                     gyroIO = new GyroIOSim(() -> Constants.Drive.kKinematics.toChassisSpeeds(mMeasuredModuleStates));
-                    moduleIOs = new SwerveModuleIO[] {
-                        new SwerveModuleIOSim() {},
-                        new SwerveModuleIOSim() {},
-                        new SwerveModuleIOSim() {},
-                        new SwerveModuleIOSim() {},
-                    };
+
+                    final var simModules = new SwerveModule[Constants.Drive.kNumModules];
+                    modules = simModules;
+                    for (var i = 0; i < simModules.length; i++) {
+                        final var index = i;
+                        var driveMotor = new MotorIOSim(
+                                DCMotor.getNEO(1), Constants.Drive.kDriveReduction, 0.14, Constants.kLoopPeriodSeconds);
+                        var steerMotor = new MotorIOSim(
+                                DCMotor.getNEO(1),
+                                Constants.Drive.kSteerReduction,
+                                0.004,
+                                Constants.kLoopPeriodSeconds);
+                        steerMotor.enableContinuousInput(0, 2 * Math.PI / Constants.Drive.kSteerReduction);
+                        var steerEncoder = new EncoderIOSim(() -> simModules[index].getPosition().angle);
+                        simModules[index] = new SwerveModule(index, driveMotor, steerMotor, steerEncoder);
+                    }
+
                     break;
                 default:
                     break;
@@ -105,19 +110,18 @@ public class Drive extends Subsystem {
         if (gyroIO == null) {
             gyroIO = new GyroIO() {};
         }
+        if (modules == null) {
+            modules = new SwerveModule[Constants.Drive.kNumModules];
+            Arrays.setAll(modules, i -> new SwerveModule(i, new MotorIO() {}, new MotorIO() {}, new EncoderIO() {}));
+        }
 
-        if (moduleIOs == null) {
-            moduleIOs = new SwerveModuleIO[Constants.Drive.kNumModules];
-            Arrays.setAll(moduleIOs, i -> new SwerveModuleIO() {});
+        for (var module : modules) {
+            module.setSteerBrakeMode(false);
+            module.setDriveBrakeMode(false);
         }
 
         mGyroIO = gyroIO;
-        mModules = new SwerveModule[moduleIOs.length];
-        for (int i = 0; i < mModules.length; i++) {
-            mModules[i] = new SwerveModule(i, moduleIOs[i]);
-            mModules[i].setSteerBrakeMode(false);
-            mModules[i].setDriveBrakeMode(false);
-        }
+        mModules = modules;
 
         updateInputs();
         zeroModules();

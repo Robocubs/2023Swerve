@@ -8,7 +8,6 @@ import com.team1701.robot.Configuration.Mode;
 import com.team1701.robot.estimation.PoseEstimator;
 import com.team1701.robot.loops.LoopRunner;
 import com.team1701.robot.subsystems.drive.Drive;
-import com.team1701.robot.subsystems.vision.Vision;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -23,14 +22,15 @@ public class Robot extends LoggedRobot {
     private final ControllerManager mControllerManager = ControllerManager.getInstance();
     private final SubsystemManager mSubsystemManager = SubsystemManager.getInstance();
     private final Drive mDrive = Drive.getInstance();
-    private final Vision mVision = Vision.getInstance();
+    // private final Vision mVision = Vision.getInstance();
     private final PoseEstimator mPoseEstimator = PoseEstimator.getInstance();
 
     @Override
     public void robotInit() {
         initializeAdvantageKit();
 
-        mSubsystemManager.setSubsystems(mDrive, mVision);
+        mSubsystemManager.setSubsystems(mDrive);
+        // mSubsystemManager.setSubsystems(mDrive, mVision);
         mSubsystemManager.registerEnabledLoops(mEnabledLooper);
         mSubsystemManager.registerDisabledLoops(mDisabledLooper);
         mSubsystemManager.outputTelemetry();
