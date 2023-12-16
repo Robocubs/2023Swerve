@@ -26,8 +26,8 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
 
 public class Vision extends Subsystem {
-
     public static Vision mInstance = null;
+
     private ArrayList<VisionCamera> mCameras = new ArrayList<VisionCamera>();
     private AprilTagFieldLayout mAprilTagFieldLayout;
     private boolean mLoadedTagFieldLayout = false;
@@ -42,9 +42,9 @@ public class Vision extends Subsystem {
 
     private Vision() {
         mCameras.add(new VisionCamera(
-                Constants.kFrontRightCameraName,
+                Constants.kFrontLeftCameraName,
                 mAprilTagFieldLayout,
-                Constants.kRobotToFrontRightCamPose,
+                Constants.kRobotToFrontLeftCamPose,
                 Constants.kCameraPoseStrategy));
         mCameras.add(new VisionCamera(
                 Constants.kBackLeftCameraName,
@@ -84,11 +84,6 @@ public class Vision extends Subsystem {
     @Override
     public void outputTelemetry() {
         mCameras.forEach(VisionCamera::outputTelemetry);
-    }
-
-    private static enum FieldChoice {
-        COMPETITION,
-        UDJ
     }
 
     public static enum LimelightMode {
