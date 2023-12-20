@@ -114,21 +114,21 @@ public final class Constants {
     }
 
     public static final class Vision {
-        public static final String kFrontLeftCameraName = "Camerafl";
+        public static final String kFrontLeftCameraName = "CameraFL";
         public static final Transform3d kRobotToFrontLeftCamPose =
-                new Transform3d(new Translation3d(0.19, -0.30, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(0)));
+                new Transform3d(new Translation3d(0.3, -0.3, 0.2), new Rotation3d(0, 0, Units.degreesToRadians(45)));
 
-        public static final String kFrontRightCameraName = "Camerafr";
+        public static final String kFrontRightCameraName = "CameraFR";
         public static final Transform3d kRobotToFrontRightCamPose =
-                new Transform3d(new Translation3d(0.19, -0.30, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(0)));
+                new Transform3d(new Translation3d(0.3, 0.3, 0.2), new Rotation3d(0, 0, Units.degreesToRadians(-45)));
 
-        public static final String kBackLeftCameraName = "Camerabl";
-        public static final Transform3d kRobotToBackLeftCamPose = new Transform3d(
-                new Translation3d(-0.195, 0.305, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(180.5)));
+        public static final String kBackLeftCameraName = "CameraBL";
+        public static final Transform3d kRobotToBackLeftCamPose =
+                new Transform3d(new Translation3d(-0.3, -0.3, 0.2), new Rotation3d(0, 0, Units.degreesToRadians(135)));
 
-        public static final String kBackRightCameraName = "Camerabr";
-        public static final Transform3d kRobotToBackRightCamPose = new Transform3d(
-                new Translation3d(-0.195, 0.305, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(180.5)));
+        public static final String kBackRightCameraName = "CameraBR";
+        public static final Transform3d kRobotToBackRightCamPose =
+                new Transform3d(new Translation3d(-0.3, 0.3, 0.2), new Rotation3d(0, 0, Units.degreesToRadians(-135)));
 
         public static final double kMaxPoseAmbiguity = 0.03;
         public static final PoseStrategy kPoseStrategy = PoseStrategy.AVERAGE_BEST_TARGETS;

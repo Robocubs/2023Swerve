@@ -5,10 +5,10 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.simulation.FlywheelSim;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 public class MotorIOSim implements MotorIO {
-    private final FlywheelSim mSim;
+    private final DCMotorSim mSim;
     private final PIDController mController;
     private final double mReduction;
     private final double mLoopPeriodSeconds;
@@ -17,7 +17,7 @@ public class MotorIOSim implements MotorIO {
     private double mPositionRadians;
 
     public MotorIOSim(DCMotor motor, double reduction, double jKgMetersSquared, double loopPeriodSeconds) {
-        mSim = new FlywheelSim(motor, 1.0 / reduction, jKgMetersSquared);
+        mSim = new DCMotorSim(motor, 1.0 / reduction, jKgMetersSquared);
         mController = new PIDController(0.0, 0.0, 0.0, loopPeriodSeconds);
         mReduction = reduction;
         mLoopPeriodSeconds = loopPeriodSeconds;
