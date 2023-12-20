@@ -56,7 +56,7 @@ public class PoseEstimator {
     }
 
     public void outputTelemetry() {
-        Logger.getInstance().recordOutput("PoseEstimator/Pose", mPoseEstimator.getEstimatedPosition());
+        Logger.recordOutput("PoseEstimator/Pose", mPoseEstimator.getEstimatedPosition());
     }
 
     public Pose3d getCurrentPose() {

@@ -103,8 +103,7 @@ public class SwerveModuleIOSparkMax implements SwerveModuleIO {
                         ? 0.0
                         : absoluteEncoderRotations);
 
-        Logger.getInstance()
-                .recordOutput("SwerveModule/" + mSteerId + "/RawSteerMeasured", mSteerEncoder.getPosition());
+        Logger.recordOutput("SwerveModule/" + mSteerId + "/RawSteerMeasured", mSteerEncoder.getPosition());
     }
 
     public void setWithVelocity(double driveVelocityRadPerSec, Rotation2d steerAngle) {
@@ -141,8 +140,7 @@ public class SwerveModuleIOSparkMax implements SwerveModuleIO {
         mSteerController.setReference(
                 MathUtil.inputModulus(angle.getRotations(), 0.0, 1.0) / mSteerReduction,
                 CANSparkMax.ControlType.kPosition);
-        Logger.getInstance()
-                .recordOutput("SwerveModule/" + mSteerId + "/RawSteerRequest", angle.getRotations() / mSteerReduction);
+        Logger.recordOutput("SwerveModule/" + mSteerId + "/RawSteerRequest", angle.getRotations() / mSteerReduction);
     }
 
     public void setDriveBrakeMode(boolean enable) {
