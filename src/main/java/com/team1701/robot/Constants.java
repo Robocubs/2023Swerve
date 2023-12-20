@@ -3,8 +3,9 @@ package com.team1701.robot;
 import com.team1701.lib.swerve.ExtendedSwerveDriveKinematics;
 import com.team1701.lib.swerve.SwerveSetpointGenerator.KinematicLimits;
 import com.team1701.lib.util.LoggedTunableNumber;
-import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.math.util.Units;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
 public final class Constants {
     public static final double kLoopPeriodSeconds = 0.02;
@@ -53,7 +54,19 @@ public final class Constants {
 
             switch (Configuration.getRobot()) {
                 case SWERVE_BOT:
-                    throw new UnsupportedOperationException("Not implemented yet");
+                    kWheelRadiusMeters = Units.inchesToMeters(2);
+                    driveTrackWidthMeters = 0.465;
+                    driveWheelbaseMeters = 0.465;
+                    driveMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
+                    kDriveReduction = kL3DriveReduction;
+                    kSteerReduction = kMk4iSteerReduction;
+                    kMotorsInverted = true;
+                    kDriveKf.initDefault(0.0002);
+                    kDriveKp.initDefault(0.00003);
+                    kDriveKd.initDefault(0);
+                    kSteerKp.initDefault(1.0);
+                    kSteerKd.initDefault(0);
+                    break;
                 case SIMULATION_BOT:
                     kWheelRadiusMeters = Units.inchesToMeters(2);
                     driveTrackWidthMeters = 0.5;
@@ -99,4 +112,24 @@ public final class Constants {
                     Units.degreesToRadians(750.0));
         }
     }
+
+    public static final String kFrontLeftCameraName = "Camerafl";
+    public static final Transform3d kRobotToFrontLeftCamPose =
+            new Transform3d(new Translation3d(0.19, -0.30, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(0)));
+
+    public static final String kFrontRightCameraName = "Camerafr";
+    public static final Transform3d kRobotToFrontRightCamPose =
+            new Transform3d(new Translation3d(0.19, -0.30, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(0)));
+
+    public static final String kBackLeftCameraName = "Camerabl";
+    public static final Transform3d kRobotToBackLeftCamPose =
+            new Transform3d(new Translation3d(-0.195, 0.305, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(180.5)));
+
+    public static final String kBackRightCameraName = "Camerabr";
+    public static final Transform3d kRobotToBackRightCamPose =
+            new Transform3d(new Translation3d(-0.195, 0.305, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(180.5)));
+
+    public static final double kCameraMaxPoseAmbiguity = 0.03;
+    public static final double kCameraZoomMultiplier = 0.9531350826;
+    public static final PoseStrategy kCameraPoseStrategy = PoseStrategy.AVERAGE_BEST_TARGETS;
 }

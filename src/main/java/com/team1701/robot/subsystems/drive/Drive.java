@@ -52,7 +52,42 @@ public class Drive extends Subsystem {
         if (Configuration.getMode() != Mode.REPLAY) {
             switch (Configuration.getRobot()) {
                 case SWERVE_BOT:
-                    throw new UnsupportedOperationException("Not implemented yet");
+                    gyroIO = new GyroIOPigeon2(10);
+                    moduleIOs = new SwerveModuleIO[] {
+                        new SwerveModuleIOSparkMax(
+                                10,
+                                11,
+                                0,
+                                true,
+                                Constants.Drive.kMotorsInverted,
+                                Constants.Drive.kSteerReduction,
+                                Rotation2d.fromRadians(-4.54)),
+                        new SwerveModuleIOSparkMax(
+                                12,
+                                13,
+                                1,
+                                true,
+                                Constants.Drive.kMotorsInverted,
+                                Constants.Drive.kSteerReduction,
+                                Rotation2d.fromRadians(-4.28)),
+                        new SwerveModuleIOSparkMax(
+                                16,
+                                17,
+                                3,
+                                true,
+                                Constants.Drive.kMotorsInverted,
+                                Constants.Drive.kSteerReduction,
+                                Rotation2d.fromRadians(-0.18)),
+                        new SwerveModuleIOSparkMax(
+                                14,
+                                15,
+                                2,
+                                true,
+                                Constants.Drive.kMotorsInverted,
+                                Constants.Drive.kSteerReduction,
+                                Rotation2d.fromRadians(-2.00)),
+                    };
+                    break;
                 case SIMULATION_BOT:
                     gyroIO = new GyroIOSim(() -> Constants.Drive.kKinematics.toChassisSpeeds(mMeasuredModuleStates));
                     moduleIOs = new SwerveModuleIO[] {
@@ -80,6 +115,8 @@ public class Drive extends Subsystem {
         mModules = new SwerveModule[moduleIOs.length];
         for (int i = 0; i < mModules.length; i++) {
             mModules[i] = new SwerveModule(i, moduleIOs[i]);
+            mModules[i].setSteerBrakeMode(false);
+            mModules[i].setDriveBrakeMode(false);
         }
 
         updateInputs();
@@ -105,7 +142,7 @@ public class Drive extends Subsystem {
         mFieldRelativeHeading = new Rotation2d(normalizedRadians);
     }
 
-    private void zeroModules() {
+    public void zeroModules() {
         for (var module : mModules) {
             module.zeroSteeringMotor();
         }
@@ -154,7 +191,7 @@ public class Drive extends Subsystem {
             public void onStart(double timestamp) {
                 setModuleSetpointsFromMeasured();
                 setVelocity(new ChassisSpeeds());
-                mKinematicLimits = Constants.Drive.kFastKinematicLimits;
+                mKinematicLimits = Constants.Drive.kUncappedKinematicLimits;
             }
 
             @Override
