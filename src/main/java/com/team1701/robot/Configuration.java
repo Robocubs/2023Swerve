@@ -4,7 +4,7 @@ import com.team1701.lib.util.LoggedTunableNumber;
 import edu.wpi.first.wpilibj.DriverStation;
 
 public final class Configuration {
-    private static final RobotType kRobot = RobotType.SWERVE_BOT;
+    private static final RobotType kRobot = RobotType.SIMULATION_BOT;
     private static final boolean kTuningEnabled = true;
 
     static {

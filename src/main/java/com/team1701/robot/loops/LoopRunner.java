@@ -38,13 +38,13 @@ public class LoopRunner implements Looper {
 
     public void loop() {
         if (mRunning) {
-            var realStart = Logger.getInstance().getRealTimestamp();
+            var realStart = Logger.getRealTimestamp();
             var start = Timer.getFPGATimestamp();
             for (var loop : mLoops) {
                 loop.onLoop(start);
             }
 
-            mLoopTime = (realStart - Logger.getInstance().getRealTimestamp()) / 1000000.0;
+            mLoopTime = (realStart - Logger.getRealTimestamp()) / 1000000.0;
             mDT = start - mTimestamp;
             mTimestamp = start;
         }
@@ -64,8 +64,8 @@ public class LoopRunner implements Looper {
 
     public void outputTelemetry() {
         var prefix = "Looper/" + mName;
-        Logger.getInstance().recordOutput(prefix + "/Running", mRunning);
-        Logger.getInstance().recordOutput(prefix + "/TimeBetweenLoopsSec", mDT);
-        Logger.getInstance().recordOutput(prefix + "/LoopPeriodSec", mLoopTime);
+        Logger.recordOutput(prefix + "/Running", mRunning);
+        Logger.recordOutput(prefix + "/TimeBetweenLoopsSec", mDT);
+        Logger.recordOutput(prefix + "/LoopPeriodSec", mLoopTime);
     }
 }

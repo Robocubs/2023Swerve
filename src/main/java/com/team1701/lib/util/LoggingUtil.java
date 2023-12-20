@@ -20,7 +20,7 @@ public class LoggingUtil {
     }
 
     public static Rotation2d getRotation2d(LogTable table, String key, Rotation2d defaultValue) {
-        return new Rotation2d(table.getDouble(key, defaultValue.getRadians()));
+        return new Rotation2d(table.get(key, defaultValue.getRadians()));
     }
 
     public static void put(LogTable table, String prefix, Transform3d transform) {
@@ -50,9 +50,9 @@ public class LoggingUtil {
 
     public static Translation3d getTranslation3d(LogTable table, String prefix, Translation3d defaultValue) {
         return new Translation3d(
-                table.getDouble(prefix + "/X", defaultValue.getX()),
-                table.getDouble(prefix + "/Y", defaultValue.getY()),
-                table.getDouble(prefix + "/Z", defaultValue.getZ()));
+                table.get(prefix + "/X", defaultValue.getX()),
+                table.get(prefix + "/Y", defaultValue.getY()),
+                table.get(prefix + "/Z", defaultValue.getZ()));
     }
 
     public static void put(LogTable table, String prefix, Rotation3d rotation) {
@@ -70,20 +70,20 @@ public class LoggingUtil {
     public static Rotation3d getRotation3d(LogTable table, String prefix, Rotation3d defaultValue) {
         var defaultQuaternion = defaultValue.getQuaternion();
         return new Rotation3d(new Quaternion(
-                table.getDouble(prefix + "/W", defaultQuaternion.getW()),
-                table.getDouble(prefix + "/X", defaultQuaternion.getX()),
-                table.getDouble(prefix + "/Y", defaultQuaternion.getY()),
-                table.getDouble(prefix + "/Z", defaultQuaternion.getZ())));
+                table.get(prefix + "/W", defaultQuaternion.getW()),
+                table.get(prefix + "/X", defaultQuaternion.getX()),
+                table.get(prefix + "/Y", defaultQuaternion.getY()),
+                table.get(prefix + "/Z", defaultQuaternion.getZ())));
     }
 
     public static void recordOutput(String prefix, Translation2d translation) {
-        Logger.getInstance().recordOutput(prefix + "/X", translation.getX());
-        Logger.getInstance().recordOutput(prefix + "/Y", translation.getY());
+        Logger.recordOutput(prefix + "/X", translation.getX());
+        Logger.recordOutput(prefix + "/Y", translation.getY());
     }
 
     public static void recordOutput(String prefix, ChassisSpeeds chassisSpeeds) {
-        Logger.getInstance().recordOutput(prefix + "/Vx", chassisSpeeds.vxMetersPerSecond);
-        Logger.getInstance().recordOutput(prefix + "/Vy", chassisSpeeds.vyMetersPerSecond);
-        Logger.getInstance().recordOutput(prefix + "/AngularVelocity", chassisSpeeds.omegaRadiansPerSecond);
+        Logger.recordOutput(prefix + "/Vx", chassisSpeeds.vxMetersPerSecond);
+        Logger.recordOutput(prefix + "/Vy", chassisSpeeds.vyMetersPerSecond);
+        Logger.recordOutput(prefix + "/AngularVelocity", chassisSpeeds.omegaRadiansPerSecond);
     }
 }

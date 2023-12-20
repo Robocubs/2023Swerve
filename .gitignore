@@ -171,6 +171,8 @@ out/
 # Simulation GUI and other tools window save file
 *-window.json
 simgui*.json
+networktables.json
+networktables.json.bck
 
 # Version file
 src/main/java/com/team1701/robot/BuildConstants.java

@@ -145,7 +145,7 @@ public class Vision extends Subsystem {
         }
 
         public PhotonPipelineResult getLatestPipelineResult() {
-            Logger.getInstance().processInputs("Camera/" + mCameraName, mCameraInputs);
+            Logger.processInputs("Camera/" + mCameraName, mCameraInputs);
             var photonPipelineResult = mCameraInputs.pipelineResult;
 
             if (!photonPipelineResult.hasTargets()) return photonPipelineResult;
@@ -161,11 +161,10 @@ public class Vision extends Subsystem {
         }
 
         public void outputTelemetry() {
-            var logger = Logger.getInstance();
             var cameraNamespace = "Camera/" + mCameraName;
             if (getTimestampSeconds() != mLastOutputTimestampSeconds) {
-                logger.recordOutput(cameraNamespace + "/SeesAprilTag", hasTargets());
-                logger.recordOutput(cameraNamespace + "/RobotPose", mRobotVisionPose);
+                Logger.recordOutput(cameraNamespace + "/SeesAprilTag", hasTargets());
+                Logger.recordOutput(cameraNamespace + "/RobotPose", mRobotVisionPose);
 
                 mLastOutputTimestampSeconds = getTimestampSeconds();
                 List<Pose3d> trackedTagPositions = new ArrayList<Pose3d>();
@@ -178,7 +177,7 @@ public class Vision extends Subsystem {
                 }
                 */
 
-                logger.recordOutput(
+                Logger.recordOutput(
                         cameraNamespace + "/AprilTagPoses",
                         trackedTagPositions.toArray(new Pose3d[trackedTagPositions.size()]));
             }
@@ -237,39 +236,36 @@ public class Vision extends Subsystem {
 
         @Override
         public void fromLog(LogTable table) {
-            var timestamp = table.getDouble("Timestamp", 0);
-            var latency = (int) table.getInteger("Latency", 0);
-            var targetCount = (int) table.getInteger("TargetCount", 0);
+            var timestamp = table.get("Timestamp", 0.0);
+            var latency = table.get("Latency", 0);
+            var targetCount = table.get("TargetCount", 0);
             var targets = new ArrayList<PhotonTrackedTarget>(targetCount);
 
             for (int i = 0; i < targetCount; i++) {
                 var targetNamespace = "Target/" + i + "/";
 
-                var minAreaRectCornerCords =
-                        table.getDoubleArray(targetNamespace + "MinAreaRectCorners", new double[0]);
+                var minAreaRectCornerCords = table.get(targetNamespace + "MinAreaRectCorners", new double[0]);
                 var minAreaRectCorners = new ArrayList<TargetCorner>(4);
                 for (int j = 0; j < minAreaRectCornerCords.length / 2; j++) {
                     minAreaRectCorners.add(
                             j, new TargetCorner(minAreaRectCornerCords[j * 2], minAreaRectCornerCords[j * 2 + 1]));
                 }
 
-                var detectedCornerCords = table.getDoubleArray(targetNamespace + "DetectedCorners", new double[0]);
+                var detectedCornerCords = table.get(targetNamespace + "DetectedCorners", new double[0]);
                 var detectedCorners = new ArrayList<TargetCorner>(detectedCornerCords.length);
                 for (int j = 0; j < detectedCornerCords.length / 2; j++) {
                     detectedCorners.add(new TargetCorner(detectedCornerCords[j * 2], detectedCornerCords[j * 2 + 1]));
                 }
 
-                var legacyFiducialID = table.getInteger(targetNamespace + "Fiducial ID", 0);
-
                 var trackedTarget = new PhotonTrackedTarget(
-                        table.getDouble(targetNamespace + "Yaw", 0),
-                        table.getDouble(targetNamespace + "Pitch", 0),
-                        table.getDouble(targetNamespace + "Area", 0),
-                        table.getDouble(targetNamespace + "Skew", 0),
-                        (int) table.getInteger(targetNamespace + "FiducialID", legacyFiducialID),
+                        table.get(targetNamespace + "Yaw", 0.0),
+                        table.get(targetNamespace + "Pitch", 0.0),
+                        table.get(targetNamespace + "Area", 0.0),
+                        table.get(targetNamespace + "Skew", 0.0),
+                        table.get(targetNamespace + "FiducialID", 0),
                         LoggingUtil.getTransform3d(table, targetNamespace + "Pose"),
                         LoggingUtil.getTransform3d(table, targetNamespace + "AltPose"),
-                        table.getDouble(targetNamespace + "PoseAmbiguity", 0),
+                        table.get(targetNamespace + "PoseAmbiguity", 0.0),
                         minAreaRectCorners,
                         detectedCorners);
 
@@ -279,7 +275,7 @@ public class Vision extends Subsystem {
             pipelineResult = new PhotonPipelineResult(latency, targets);
             pipelineResult.setTimestampSeconds(timestamp);
 
-            isConnected = table.getBoolean("IsConnected", false);
+            isConnected = table.get("IsConnected", false);
         }
     }
 }

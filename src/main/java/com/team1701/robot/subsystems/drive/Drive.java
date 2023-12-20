@@ -227,7 +227,7 @@ public class Drive extends Subsystem {
                 Stream.of(mModules).map(SwerveModule::getPosition).toArray(SwerveModulePosition[]::new);
 
         mGyroIO.updateInputs(mGyroInputs);
-        Logger.getInstance().processInputs("Drive/Gyro", mGyroInputs);
+        Logger.processInputs("Drive/Gyro", mGyroInputs);
         mFieldRelativeHeading = new Rotation2d(mGyroInputs.yawPositionRad - mYawOffset);
     }
 
@@ -245,10 +245,10 @@ public class Drive extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        Logger.getInstance().recordOutput("Drive/Gyro/FieldRelativeRad", mFieldRelativeHeading.getRadians());
-        Logger.getInstance().recordOutput("Drive/Gyro/FieldRelativeDeg", mFieldRelativeHeading.getDegrees());
-        Logger.getInstance().recordOutput("Drive/MeasuredStates", mMeasuredModuleStates);
-        Logger.getInstance().recordOutput("Drive/DesiredStates", mDesiredSetpoint.mModuleStates);
+        Logger.recordOutput("Drive/Gyro/FieldRelativeRad", mFieldRelativeHeading.getRadians());
+        Logger.recordOutput("Drive/Gyro/FieldRelativeDeg", mFieldRelativeHeading.getDegrees());
+        Logger.recordOutput("Drive/MeasuredStates", mMeasuredModuleStates);
+        Logger.recordOutput("Drive/DesiredStates", mDesiredSetpoint.mModuleStates);
 
         for (var module : mModules) {
             module.outputTelemetry();

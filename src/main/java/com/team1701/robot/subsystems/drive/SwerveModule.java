@@ -69,11 +69,11 @@ public class SwerveModule extends Subsystem {
     @Override
     public void readPeriodicInputs() {
         mIO.updateInputs(mInputs);
-        Logger.getInstance().processInputs("Drive/Module/" + mIndex, mInputs);
+        Logger.processInputs("Drive/Module/" + mIndex, mInputs);
         mMeasuredAngle =
                 new Rotation2d(MathUtil.angleModulus(mInputs.steerPositionRad * Constants.Drive.kSteerReduction)
                         + mAngleOffsetRadians);
-        Logger.getInstance().recordOutput("Drive/Module/MeasuredAngle", mAngleOffsetRadians);
+        Logger.recordOutput("Drive/Module/MeasuredAngle", mAngleOffsetRadians);
     }
 
     @Override
