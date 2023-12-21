@@ -106,7 +106,7 @@ public class SwerveModule extends Subsystem {
     }
 
     public void zeroSteeringMotor() {
-        mAngleOffsetRadians = MathUtil.angleModulus(mSteerEncoderInputs.positionRadians
+        mAngleOffsetRadians = MathUtil.angleModulus(mSteerEncoderInputs.position.getRadians()
                 - mSteerMotorInputs.positionRadians * Constants.Drive.kSteerReduction);
         mMeasuredAngle = new Rotation2d(MathUtil.angleModulus(
                 mSteerMotorInputs.positionRadians * Constants.Drive.kSteerReduction + mAngleOffsetRadians));

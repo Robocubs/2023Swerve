@@ -1,7 +1,6 @@
 package com.team1701.lib.drivers.encoders;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.AnalogEncoder;
 
 public class EncoderIOAnalog implements EncoderIO {
@@ -14,7 +13,7 @@ public class EncoderIOAnalog implements EncoderIO {
     @Override
     public void updateInputs(EncoderInputs inputs) {
         var rotations = mEncoder.get();
-        inputs.positionRadians = Units.rotationsToRadians(
+        inputs.position = Rotation2d.fromRotations(
                 rotations == Double.NaN || rotations == Double.POSITIVE_INFINITY ? 0.0 : rotations);
     }
 

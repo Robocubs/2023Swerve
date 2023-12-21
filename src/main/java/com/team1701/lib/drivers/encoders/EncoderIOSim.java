@@ -13,6 +13,6 @@ public class EncoderIOSim implements EncoderIO {
 
     @Override
     public void updateInputs(EncoderInputs inputs) {
-        inputs.positionRadians = mRotationSupplier.get().getRadians();
+        inputs.position = mRotationSupplier.get();
     }
 }
