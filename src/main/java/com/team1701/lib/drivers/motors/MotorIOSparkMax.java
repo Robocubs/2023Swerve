@@ -1,17 +1,24 @@
 package com.team1701.lib.drivers.motors;
 
+import java.util.Optional;
+import java.util.Queue;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
-import com.team1701.lib.util.SparkMaxUtil;
+import com.team1701.lib.util.SignalSamplingThread;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 
 public class MotorIOSparkMax implements MotorIO {
     private final CANSparkMax mMotor;
     private final RelativeEncoder mEncoder;
     private final SparkMaxPIDController mController;
+
+    private Optional<Queue<Double>> mPositionSamples = Optional.empty();
+    private Optional<Queue<Double>> mVelocitySamples = Optional.empty();
 
     public MotorIOSparkMax(CANSparkMax motor) {
         mMotor = motor;
@@ -21,9 +28,20 @@ public class MotorIOSparkMax implements MotorIO {
 
     @Override
     public void updateInputs(MotorInputs inputs) {
-        inputs.positionRadians = Units.rotationsToRadians(SparkMaxUtil.cleanSparkMaxValue(0.0, mEncoder.getPosition()));
-        inputs.velocityRadiansPerSecond =
-                Units.rotationsToRadians(SparkMaxUtil.cleanSparkMaxValue(0.0, mEncoder.getVelocity()) / 60);
+        inputs.positionRadians = Units.rotationsToRadians(mEncoder.getPosition());
+        inputs.velocityRadiansPerSecond = Units.rotationsPerMinuteToRadiansPerSecond(mEncoder.getVelocity());
+        mPositionSamples.ifPresent(samples -> {
+            inputs.positionRadiansSamples = samples.stream()
+                    .mapToDouble((position) -> Units.rotationsToRadians(position))
+                    .toArray();
+            samples.clear();
+        });
+        mVelocitySamples.ifPresent(samples -> {
+            inputs.velocityRadiansPerSecondSamples = samples.stream()
+                    .mapToDouble((velocity) -> Units.rotationsPerMinuteToRadiansPerSecond(velocity))
+                    .toArray();
+            samples.clear();
+        });
     }
 
     @Override
@@ -34,7 +52,8 @@ public class MotorIOSparkMax implements MotorIO {
     @Override
     public void setVelocityControl(double velocityRadiansPerSecond) {
         mController.setReference(
-                Units.radiansToRotations(velocityRadiansPerSecond) * 60, CANSparkMax.ControlType.kVelocity);
+                Units.radiansPerSecondToRotationsPerMinute(velocityRadiansPerSecond),
+                CANSparkMax.ControlType.kVelocity);
     }
 
     @Override
@@ -58,5 +77,27 @@ public class MotorIOSparkMax implements MotorIO {
         mController.setP(p);
         mController.setI(i);
         mController.setD(d);
+    }
+
+    @Override
+    public void enablePositionSampling(SignalSamplingThread samplingThread) {
+        if (mPositionSamples.isPresent()) {
+            DriverStation.reportWarning("Position sampling already enabled", false);
+            return;
+        }
+
+        var queue = samplingThread.addSignal(() -> Units.rotationsToRadians(mEncoder.getPosition()));
+        mPositionSamples = Optional.of(queue);
+    }
+
+    @Override
+    public void enableVelocitySampling(SignalSamplingThread samplingThread) {
+        if (mVelocitySamples.isPresent()) {
+            DriverStation.reportWarning("Velocity sampling already enabled", false);
+            return;
+        }
+
+        var queue = samplingThread.addSignal(() -> Units.rotationsPerMinuteToRadiansPerSecond(mEncoder.getVelocity()));
+        mVelocitySamples = Optional.of(queue);
     }
 }

@@ -10,7 +10,7 @@ import com.team1701.lib.drivers.motors.MotorIOSparkMax;
 import com.team1701.robot.Constants;
 import edu.wpi.first.wpilibj.DriverStation;
 
-public final class MotorFactory {
+public final class DriveMotorFactory {
     public static MotorIOSparkMax createDriveMotorIOSparkMax(int deviceId, boolean isInverted) {
         var motor = new CANSparkMax(deviceId, MotorType.kBrushless);
         var encoder = motor.getEncoder();
@@ -21,7 +21,6 @@ public final class MotorFactory {
 
         motor.setCANTimeout(200);
 
-        // TODO: decide when to burn values
         configureWithRetry(() -> motor.restoreFactoryDefaults(), onError);
 
         configureWithRetry(() -> motor.setSmartCurrentLimit(80), onError);
@@ -53,7 +52,6 @@ public final class MotorFactory {
 
         motor.setCANTimeout(200);
 
-        // TODO: decide when to burn values
         configureWithRetry(() -> motor.restoreFactoryDefaults(), onError);
 
         configureWithRetry(() -> motor.setSmartCurrentLimit(30), onError);

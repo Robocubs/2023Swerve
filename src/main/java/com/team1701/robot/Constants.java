@@ -24,9 +24,12 @@ public final class Constants {
         protected static final double kL1DriveReduction = (14.0 / 50.0) * (25.0 / 19.0) * (15.0 / 45.0);
         protected static final double kL2DriveReduction = (14.0 / 50.0) * (27.0 / 17.0) * (15.0 / 45.0);
         protected static final double kL3DriveReduction = (14.0 / 50.0) * (28.0 / 16.0) * (15.0 / 45.0);
+        protected static final double k16ToothKitReduction = (16.0 / 14.0);
 
         protected static final double kMk4SteerReduction = 1.0 / 12.8;
         protected static final double kMk4iSteerReduction = 7.0 / 150.0;
+
+        public static final double kOdometryFrequency = 250.0;
 
         public static final double kWheelRadiusMeters;
         public static final double kMaxVelocityMetersPerSecond;
@@ -72,7 +75,7 @@ public final class Constants {
                     driveTrackWidthMeters = 0.5;
                     driveWheelbaseMeters = 0.5;
                     driveMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
-                    kDriveReduction = kL3DriveReduction;
+                    kDriveReduction = kL3DriveReduction * k16ToothKitReduction;
                     kSteerReduction = kMk4iSteerReduction;
                     kMotorsInverted = true;
                     kDriveKf.initDefault(0.02);

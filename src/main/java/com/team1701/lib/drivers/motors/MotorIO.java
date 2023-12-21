@@ -1,5 +1,6 @@
 package com.team1701.lib.drivers.motors;
 
+import com.team1701.lib.util.SignalSamplingThread;
 import edu.wpi.first.math.geometry.Rotation2d;
 import org.littletonrobotics.junction.AutoLog;
 
@@ -8,6 +9,8 @@ public interface MotorIO {
     public static class MotorInputs {
         public double positionRadians;
         public double velocityRadiansPerSecond;
+        public double[] positionRadiansSamples = new double[0];
+        public double[] velocityRadiansPerSecondSamples = new double[0];
     }
 
     public default void updateInputs(MotorInputs inputs) {}
@@ -23,4 +26,8 @@ public interface MotorIO {
     public default void setBreakMode(boolean enable) {}
 
     public default void setPID(double ff, double p, double i, double d) {}
+
+    public default void enablePositionSampling(SignalSamplingThread samplingThread) {}
+
+    public default void enableVelocitySampling(SignalSamplingThread samplingThread) {}
 }

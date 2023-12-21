@@ -1,5 +1,6 @@
 package com.team1701.lib.drivers.motors;
 
+import com.team1701.lib.util.SignalSamplingThread;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -15,6 +16,8 @@ public class MotorIOSim implements MotorIO {
     private double mFeedForward;
     private double mVelocityRadiansPerSecond;
     private double mPositionRadians;
+    private boolean mPositionSamplingEnabled;
+    private boolean mVelocitySamplingEnabled;
 
     public MotorIOSim(DCMotor motor, double reduction, double jKgMetersSquared, double loopPeriodSeconds) {
         mSim = new DCMotorSim(motor, 1.0 / reduction, jKgMetersSquared);
@@ -33,8 +36,17 @@ public class MotorIOSim implements MotorIO {
 
         mVelocityRadiansPerSecond = mSim.getAngularVelocityRadPerSec() / mReduction;
         mPositionRadians += mVelocityRadiansPerSecond * mLoopPeriodSeconds;
+
         inputs.positionRadians = mPositionRadians;
         inputs.velocityRadiansPerSecond = mVelocityRadiansPerSecond;
+
+        if (mPositionSamplingEnabled) {
+            inputs.positionRadiansSamples = new double[] {mPositionRadians};
+        }
+
+        if (mVelocitySamplingEnabled) {
+            inputs.velocityRadiansPerSecondSamples = new double[] {mVelocityRadiansPerSecond};
+        }
     }
 
     @Override
@@ -67,6 +79,26 @@ public class MotorIOSim implements MotorIO {
     public void setPID(double ff, double p, double i, double d) {
         mFeedForward = ff;
         mController.setPID(p, i, d);
+    }
+
+    @Override
+    public void enablePositionSampling(SignalSamplingThread samplingThread) {
+        if (mPositionSamplingEnabled) {
+            DriverStation.reportWarning("Position sampling already enabled", false);
+            return;
+        }
+
+        mPositionSamplingEnabled = true;
+    }
+
+    @Override
+    public void enableVelocitySampling(SignalSamplingThread samplingThread) {
+        if (mVelocitySamplingEnabled) {
+            DriverStation.reportWarning("Velocity sampling already enabled", false);
+            return;
+        }
+
+        mVelocitySamplingEnabled = true;
     }
 
     public void enableContinuousInput(double minimumInput, double maximumInput) {

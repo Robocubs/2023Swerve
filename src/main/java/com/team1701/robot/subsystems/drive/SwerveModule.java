@@ -5,6 +5,7 @@ import com.team1701.lib.drivers.encoders.EncoderInputsAutoLogged;
 import com.team1701.lib.drivers.motors.MotorIO;
 import com.team1701.lib.drivers.motors.MotorInputsAutoLogged;
 import com.team1701.lib.util.GeometryUtil;
+import com.team1701.lib.util.SignalSamplingThread;
 import com.team1701.lib.util.Util;
 import com.team1701.robot.Constants;
 import com.team1701.robot.subsystems.Subsystem;
@@ -29,7 +30,12 @@ public class SwerveModule extends Subsystem {
     private double mAngleOffsetRadians;
     private boolean mOrienting;
 
-    public SwerveModule(int index, MotorIO driveMotorIO, MotorIO steerMotorIO, EncoderIO steerEncoderIO) {
+    public SwerveModule(
+            int index,
+            MotorIO driveMotorIO,
+            MotorIO steerMotorIO,
+            EncoderIO steerEncoderIO,
+            SignalSamplingThread odometryThread) {
         mIndex = index;
         mDriveMotorIO = driveMotorIO;
         mSteerMotorIO = steerMotorIO;
@@ -38,6 +44,9 @@ public class SwerveModule extends Subsystem {
         mDriveMotorIO.setPID(
                 Constants.Drive.kDriveKf.get(), Constants.Drive.kDriveKp.get(), 0, Constants.Drive.kDriveKd.get());
         mSteerMotorIO.setPID(0, Constants.Drive.kSteerKp.get(), 0, Constants.Drive.kSteerKd.get());
+
+        mDriveMotorIO.enablePositionSampling(odometryThread);
+        mSteerMotorIO.enablePositionSampling(odometryThread);
     }
 
     public SwerveModulePosition getPosition() {
@@ -46,6 +55,25 @@ public class SwerveModule extends Subsystem {
                         * Constants.Drive.kDriveReduction
                         * Constants.Drive.kWheelRadiusMeters,
                 mMeasuredAngle);
+    }
+
+    public SwerveModulePosition[] getPositionSamples() {
+        var states = new SwerveModulePosition
+                [Math.min(
+                        mDriveMotorInputs.positionRadiansSamples.length,
+                        mSteerMotorInputs.positionRadiansSamples.length)];
+
+        for (int i = 0; i < states.length; i++) {
+            states[i] = new SwerveModulePosition(
+                    mDriveMotorInputs.positionRadiansSamples[i]
+                            * Constants.Drive.kDriveReduction
+                            * Constants.Drive.kWheelRadiusMeters,
+                    new Rotation2d(MathUtil.angleModulus(
+                            mSteerMotorInputs.positionRadiansSamples[i] * Constants.Drive.kSteerReduction
+                                    + mAngleOffsetRadians)));
+        }
+
+        return states;
     }
 
     public SwerveModuleState getState() {

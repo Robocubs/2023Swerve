@@ -40,6 +40,12 @@ public class PoseEstimator {
         mPoseEstimator.update(gyroAngle, modulePositions);
     }
 
+    public void updateWithTime(double timeSeconds, Rotation2d gyroAngle, SwerveModulePosition[] modulePositions) {
+        mGyroAngle = gyroAngle;
+        mModulePositions = modulePositions;
+        mPoseEstimator.updateWithTime(timeSeconds, gyroAngle, modulePositions);
+    }
+
     public void setPose(Pose2d pose) {
         resetPosition(mGyroAngle, mModulePositions, pose);
     }
