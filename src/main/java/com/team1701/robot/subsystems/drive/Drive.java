@@ -3,15 +3,8 @@ package com.team1701.robot.subsystems.drive;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import com.team1701.lib.drivers.encoders.EncoderIO;
-import com.team1701.lib.drivers.encoders.EncoderIOAnalog;
-import com.team1701.lib.drivers.encoders.EncoderIOSim;
 import com.team1701.lib.drivers.gyros.GyroIO;
-import com.team1701.lib.drivers.gyros.GyroIOPigeon2;
-import com.team1701.lib.drivers.gyros.GyroIOSim;
 import com.team1701.lib.drivers.gyros.GyroInputsAutoLogged;
-import com.team1701.lib.drivers.motors.MotorIO;
-import com.team1701.lib.drivers.motors.MotorIOSim;
 import com.team1701.lib.swerve.SwerveSetpoint;
 import com.team1701.lib.swerve.SwerveSetpointGenerator;
 import com.team1701.lib.swerve.SwerveSetpointGenerator.KinematicLimits;
@@ -19,8 +12,6 @@ import com.team1701.lib.util.GeometryUtil;
 import com.team1701.lib.util.SignalSamplingThread;
 import com.team1701.lib.util.TimeLockedBoolean;
 import com.team1701.lib.util.Util;
-import com.team1701.robot.Configuration;
-import com.team1701.robot.Configuration.Mode;
 import com.team1701.robot.Constants;
 import com.team1701.robot.estimation.PoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -28,7 +19,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -58,80 +48,32 @@ public class Drive extends SubsystemBase {
     @AutoLogOutput(key = "Drive/MeasuredStates")
     private SwerveModuleState[] mMeasuredModuleStates;
 
-    public static Drive getInstance() {
-        if (mInstance == null) {
-            mInstance = new Drive();
+    public static synchronized Drive build(GyroIO gyroIO, SwerveModuleIO[] moduleIOs) {
+        if (mInstance != null) {
+            throw new IllegalStateException("Drive already initialized");
         }
 
+        mInstance = new Drive(gyroIO, moduleIOs);
         return mInstance;
     }
 
-    private Drive() {
+    private Drive(GyroIO gyroIO, SwerveModuleIO[] moduleIOs) {
         mMeasuredModuleStates = new SwerveModuleState[Constants.Drive.kNumModules];
         Arrays.setAll(mMeasuredModuleStates, i -> new SwerveModuleState());
 
         mMeasuredModulePositions = new SwerveModulePosition[Constants.Drive.kNumModules];
         Arrays.setAll(mMeasuredModulePositions, i -> new SwerveModulePosition());
 
-        GyroIO gyroIO = null;
-        SwerveModuleIO[] moduleIOs = null;
-        if (Configuration.getMode() != Mode.REPLAY) {
-            switch (Configuration.getRobot()) {
-                case SWERVE_BOT:
-                    gyroIO = new GyroIOPigeon2(10);
-                    moduleIOs = Stream.of(new SwerveModuleConfiguration[] {
-                                new SwerveModuleConfiguration(10, 11, 0),
-                                new SwerveModuleConfiguration(12, 13, 1),
-                                new SwerveModuleConfiguration(16, 17, 3),
-                                new SwerveModuleConfiguration(14, 15, 2),
-                            })
-                            .map(config -> new SwerveModuleIO(
-                                    DriveMotorFactory.createDriveMotorIOSparkMax(
-                                            config.driveId, Constants.Drive.kMotorsInverted),
-                                    DriveMotorFactory.createSteerMotorIOSparkMax(
-                                            config.steerId, Constants.Drive.kMotorsInverted),
-                                    new EncoderIOAnalog(config.steerId)))
-                            .toArray(SwerveModuleIO[]::new);
-                    break;
-                case SIMULATION_BOT:
-                    gyroIO = new GyroIOSim(
-                            () -> Constants.Drive.kKinematics.toChassisSpeeds(mMeasuredModuleStates),
-                            Constants.kLoopPeriodSeconds);
-                    moduleIOs = new SwerveModuleIO[Constants.Drive.kNumModules];
-                    for (var i = 0; i < moduleIOs.length; i++) {
-                        var index = i;
-                        var driveMotor = new MotorIOSim(
-                                DCMotor.getNEO(1), Constants.Drive.kDriveReduction, 0.14, Constants.kLoopPeriodSeconds);
-                        var steerMotor = new MotorIOSim(
-                                DCMotor.getNEO(1),
-                                Constants.Drive.kSteerReduction,
-                                0.004,
-                                Constants.kLoopPeriodSeconds);
-                        steerMotor.enableContinuousInput(0, 2 * Math.PI / Constants.Drive.kSteerReduction);
-                        var steerEncoder = new EncoderIOSim(() -> mMeasuredModulePositions[index].angle);
-                        moduleIOs[i] = new SwerveModuleIO(driveMotor, steerMotor, steerEncoder);
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        if (gyroIO == null) {
-            gyroIO = new GyroIO() {};
-        }
-
         gyroIO.enableYawSampling(mOdometryThread);
-
-        if (moduleIOs == null) {
-            moduleIOs = new SwerveModuleIO[Constants.Drive.kNumModules];
-            Arrays.setAll(moduleIOs, i -> new SwerveModuleIO(new MotorIO() {}, new MotorIO() {}, new EncoderIO() {}));
-        }
-
         mGyroIO = gyroIO;
         mModules = new SwerveModule[moduleIOs.length];
         for (var i = 0; i < mModules.length; i++) {
-            mModules[i] = new SwerveModule(i, moduleIOs[i], mOdometryThread);
+            var swerveModuleIO = moduleIOs[i];
+
+            swerveModuleIO.driveMotorIO.enablePositionSampling(mOdometryThread);
+            swerveModuleIO.steerMotorIO.enablePositionSampling(mOdometryThread);
+
+            mModules[i] = new SwerveModule(i, moduleIOs[i]);
         }
 
         for (var module : mModules) {
@@ -246,6 +188,10 @@ public class Drive extends SubsystemBase {
 
     public void setVelocity(ChassisSpeeds chassisSpeeds) {
         mDesiredChassisSpeeds = chassisSpeeds;
+    }
+
+    public ChassisSpeeds getVelocity() {
+        return Constants.Drive.kKinematics.toChassisSpeeds(mMeasuredModuleStates);
     }
 
     @AutoLogOutput()

@@ -1,5 +1,6 @@
 package com.team1701.lib.drivers.encoders;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.AnalogEncoder;
 
@@ -18,6 +19,6 @@ public class EncoderIOAnalog implements EncoderIO {
     }
 
     public void setPositionOffset(Rotation2d offset) {
-        mEncoder.setPositionOffset(offset.getRotations());
+        mEncoder.setPositionOffset(MathUtil.inputModulus(offset.getRotations(), 0.0, 1.0));
     }
 }

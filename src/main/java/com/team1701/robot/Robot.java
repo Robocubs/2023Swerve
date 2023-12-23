@@ -5,12 +5,7 @@
 package com.team1701.robot;
 
 import com.team1701.robot.Configuration.Mode;
-import com.team1701.robot.commands.JoystickDriveCommand;
-import com.team1701.robot.subsystems.drive.Drive;
-import com.team1701.robot.subsystems.vision.Vision;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -19,18 +14,13 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 public class Robot extends LoggedRobot {
-    // Subsystems (Public to avoid use checks)
-    public final Drive mDrive = Drive.getInstance();
-    public final Vision mVision = Vision.getInstance();
-
-    // Controllers
-    private final CommandXboxController mDriverController = new CommandXboxController(0);
+    @SuppressWarnings("unused") // Needed for output logging
+    private RobotContainer mRobotContainer;
 
     @Override
     public void robotInit() {
         initializeAdvantageKit();
-        setupDefaultCommands();
-        setupControllerBindings();
+        mRobotContainer = new RobotContainer();
     }
 
     private void initializeAdvantageKit() {
@@ -74,34 +64,19 @@ public class Robot extends LoggedRobot {
         Logger.start();
     }
 
-    private void setupDefaultCommands() {
-        mDrive.setDefaultCommand(new JoystickDriveCommand(
-                () -> -mDriverController.getLeftY(),
-                () -> -mDriverController.getLeftX(),
-                () -> -mDriverController.getRightX()));
-    }
-
-    private void setupControllerBindings() {
-        mDriverController.x().onTrue(Commands.runOnce(() -> mDrive.zeroGyroscope()));
-    }
-
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
     }
 
     @Override
-    public void autonomousInit() {
-        mDrive.zeroModules();
-    }
+    public void autonomousInit() {}
 
     @Override
     public void autonomousPeriodic() {}
 
     @Override
-    public void teleopInit() {
-        mDrive.zeroModules();
-    }
+    public void teleopInit() {}
 
     @Override
     public void teleopPeriodic() {}

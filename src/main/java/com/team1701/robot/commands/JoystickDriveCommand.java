@@ -14,12 +14,12 @@ public class JoystickDriveCommand extends Command {
     private final DoubleSupplier mStrafe;
     private final DoubleSupplier mRotation;
 
-    public JoystickDriveCommand(DoubleSupplier throttle, DoubleSupplier strafe, DoubleSupplier rotation) {
-        mDrive = Drive.getInstance();
+    public JoystickDriveCommand(Drive drive, DoubleSupplier throttle, DoubleSupplier strafe, DoubleSupplier rotation) {
+        mDrive = drive;
         mThrottle = throttle;
         mStrafe = strafe;
         mRotation = rotation;
-        addRequirements(mDrive);
+        addRequirements(drive);
     }
 
     @Override

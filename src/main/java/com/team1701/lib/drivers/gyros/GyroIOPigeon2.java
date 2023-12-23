@@ -2,10 +2,12 @@ package com.team1701.lib.drivers.gyros;
 
 import java.util.Optional;
 import java.util.Queue;
+import java.util.function.Consumer;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.Pigeon2Configurator;
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.team1701.lib.util.SignalSamplingThread;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -24,6 +26,10 @@ public class GyroIOPigeon2 implements GyroIO {
         mYawSignal = mPigeon.getYaw();
         mPitchSignal = mPigeon.getPitch();
         mRollSignal = mPigeon.getRoll();
+    }
+
+    public GyroIOPigeon2(int pigeonID, Consumer<Pigeon2Configurator> configure) {
+        this(pigeonID);
     }
 
     public void updateInputs(GyroInputs inputs) {

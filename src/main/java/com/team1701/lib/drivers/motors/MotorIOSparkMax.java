@@ -16,20 +16,23 @@ public class MotorIOSparkMax implements MotorIO {
     private final CANSparkMax mMotor;
     private final RelativeEncoder mEncoder;
     private final SparkMaxPIDController mController;
+    private final double mReduction;
 
     private Optional<Queue<Double>> mPositionSamples = Optional.empty();
     private Optional<Queue<Double>> mVelocitySamples = Optional.empty();
 
-    public MotorIOSparkMax(CANSparkMax motor) {
+    public MotorIOSparkMax(CANSparkMax motor, double reduction) {
         mMotor = motor;
         mEncoder = motor.getEncoder();
         mController = motor.getPIDController();
+        mReduction = reduction;
     }
 
     @Override
     public void updateInputs(MotorInputs inputs) {
-        inputs.positionRadians = Units.rotationsToRadians(mEncoder.getPosition());
-        inputs.velocityRadiansPerSecond = Units.rotationsPerMinuteToRadiansPerSecond(mEncoder.getVelocity());
+        inputs.positionRadians = Units.rotationsToRadians(mEncoder.getPosition()) * mReduction;
+        inputs.velocityRadiansPerSecond =
+                Units.rotationsPerMinuteToRadiansPerSecond(mEncoder.getVelocity()) * mReduction;
         mPositionSamples.ifPresent(samples -> {
             inputs.positionRadiansSamples = samples.stream()
                     .mapToDouble((position) -> Units.rotationsToRadians(position))

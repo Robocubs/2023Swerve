@@ -16,6 +16,7 @@ public final class Constants {
 
     public static final class Motors {
         public static final double kMaxNeoRPM = 5676;
+        public static final double kMaxKrakenRPM = 6000;
     }
 
     public static final class Drive {
@@ -31,7 +32,8 @@ public final class Constants {
         public static final double kMaxVelocityMetersPerSecond;
         public static final double kMaxAngularVelocityRadiansPerSecond;
         public static final double kMinLockVelocityMetersPerSecond = 0.2;
-        public static final boolean kMotorsInverted;
+        public static final boolean kDriveMotorsInverted;
+        public static final boolean kSteerMotorsInverted;
         public static final double kDriveReduction;
         public static final double kSteerReduction;
 
@@ -60,7 +62,8 @@ public final class Constants {
                     driveMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
                     kDriveReduction = kL3DriveReduction;
                     kSteerReduction = kMk4iSteerReduction;
-                    kMotorsInverted = true;
+                    kDriveMotorsInverted = true;
+                    kSteerMotorsInverted = true;
                     kDriveKf.initDefault(0.0002);
                     kDriveKp.initDefault(0.00003);
                     kDriveKd.initDefault(0);
@@ -71,14 +74,15 @@ public final class Constants {
                     kWheelRadiusMeters = Units.inchesToMeters(2);
                     driveTrackWidthMeters = 0.5;
                     driveWheelbaseMeters = 0.5;
-                    driveMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
+                    driveMotorMaxRPM = Constants.Motors.kMaxKrakenRPM;
                     kDriveReduction = kL3DriveReduction * k16ToothKitReduction;
                     kSteerReduction = kMk4iSteerReduction;
-                    kMotorsInverted = true;
-                    kDriveKf.initDefault(0.02);
-                    kDriveKp.initDefault(0.3);
+                    kDriveMotorsInverted = true;
+                    kSteerMotorsInverted = true;
+                    kDriveKf.initDefault(0.1);
+                    kDriveKp.initDefault(0.6);
                     kDriveKd.initDefault(0);
-                    kSteerKp.initDefault(0.8);
+                    kSteerKp.initDefault(16.0);
                     kSteerKd.initDefault(0);
                     break;
                 default:

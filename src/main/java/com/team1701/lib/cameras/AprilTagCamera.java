@@ -5,23 +5,22 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import com.team1701.lib.cameras.PhotonCameraIO.PhotonCameraInputs;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
-import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
-import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
-public class PhotonCameraWrapper {
-    private final PhotonCamera mCamera;
+public class AprilTagCamera {
+    private final PhotonCameraIO mCameraIO;
     private final PhotonCameraInputs mCameraInputs;
     private final String mLoggingPrefix;
     private final PhotonPoseEstimator mPoseEstimator;
@@ -32,16 +31,17 @@ public class PhotonCameraWrapper {
     private final ArrayList<Predicate<PhotonTrackedTarget>> mTargetFilters = new ArrayList<>();
     private final ArrayList<Predicate<Pose3d>> mPoseFilters = new ArrayList<>();
 
-    public PhotonCameraWrapper(
+    public AprilTagCamera(
             String cameraName,
+            PhotonCameraIO cameraIO,
             Transform3d robotToCamPose,
             PoseStrategy poseStrategy,
             Supplier<AprilTagFieldLayout> fieldLayoutSupplier,
             Supplier<Pose3d> robotPoseSupplier) {
-        mCamera = new PhotonCamera(cameraName);
+        mCameraIO = cameraIO;
         mCameraInputs = new PhotonCameraInputs();
-        mLoggingPrefix = "Camera/" + mCamera.getName() + "/";
-        mPoseEstimator = new PhotonPoseEstimator(fieldLayoutSupplier.get(), poseStrategy, mCamera, robotToCamPose);
+        mLoggingPrefix = "Camera/" + cameraName + "/";
+        mPoseEstimator = new PhotonPoseEstimator(fieldLayoutSupplier.get(), poseStrategy, null, robotToCamPose);
         mPoseEstimator.setMultiTagFallbackStrategy(poseStrategy);
         mRobotToCamPose = robotToCamPose;
         mFieldLayoutSupplier = fieldLayoutSupplier;
@@ -49,8 +49,7 @@ public class PhotonCameraWrapper {
     }
 
     public void periodic() {
-        mCameraInputs.isConnected = mCamera.isConnected();
-        mCameraInputs.pipelineResult = mCamera.getLatestResult();
+        mCameraIO.updateInputs(mCameraInputs);
         Logger.processInputs(mLoggingPrefix, mCameraInputs);
 
         var pipelineResult = mCameraInputs.pipelineResult;
@@ -113,7 +112,6 @@ public class PhotonCameraWrapper {
     }
 
     public void addToVisionSim(VisionSystemSim visionSim, SimCameraProperties cameraProperties) {
-        var cameraSim = new PhotonCameraSim(mCamera, cameraProperties);
-        visionSim.addCamera(cameraSim, mRobotToCamPose);
+        mCameraIO.addToVisionSim(visionSim, cameraProperties, mRobotToCamPose);
     }
 }

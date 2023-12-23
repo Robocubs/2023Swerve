@@ -4,7 +4,8 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.team1701.lib.cameras.PhotonCameraWrapper;
+import com.team1701.lib.cameras.AprilTagCamera;
+import com.team1701.lib.cameras.PhotonCameraIO;
 import com.team1701.robot.Constants;
 import com.team1701.robot.Robot;
 import com.team1701.robot.estimation.PoseEstimator;
@@ -17,44 +18,57 @@ import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 
 public class Vision extends SubsystemBase {
-    public static Vision mInstance = null;
+    private static Vision mInstance = null;
 
     private final PoseEstimator mPoseEstimator = PoseEstimator.getInstance();
-    private final ArrayList<PhotonCameraWrapper> mCameras = new ArrayList<PhotonCameraWrapper>();
+    private final ArrayList<AprilTagCamera> mCameras = new ArrayList<AprilTagCamera>();
     private AprilTagFieldLayout mAprilTagFieldLayout = AprilTagFields.kDefaultField.loadAprilTagLayoutField();
     private Optional<VisionSystemSim> mVisionSim = Optional.empty();
 
-    public static synchronized Vision getInstance() {
-        if (mInstance == null) {
-            mInstance = new Vision();
+    public static synchronized Vision build(
+            PhotonCameraIO cameraIOFrontLeft,
+            PhotonCameraIO cameraIOFrontRight,
+            PhotonCameraIO cameraIOBackLeft,
+            PhotonCameraIO cameraIOBackRight) {
+        if (mInstance != null) {
+            throw new IllegalStateException("Vision already initialized");
         }
 
+        mInstance = new Vision(cameraIOFrontLeft, cameraIOFrontRight, cameraIOBackLeft, cameraIOBackRight);
         return mInstance;
     }
 
-    private Vision() {
+    private Vision(
+            PhotonCameraIO cameraIOFrontLeft,
+            PhotonCameraIO cameraIOFrontRight,
+            PhotonCameraIO cameraIOBackLeft,
+            PhotonCameraIO cameraIOBackRight) {
         Supplier<AprilTagFieldLayout> fieldLayoutSupplier = () -> mAprilTagFieldLayout;
 
-        mCameras.add(new PhotonCameraWrapper(
+        mCameras.add(new AprilTagCamera(
                 Constants.Vision.kFrontLeftCameraName,
+                cameraIOFrontLeft,
                 Constants.Vision.kRobotToFrontLeftCamPose,
                 Constants.Vision.kPoseStrategy,
                 fieldLayoutSupplier,
                 mPoseEstimator::getPose3d));
-        mCameras.add(new PhotonCameraWrapper(
-                Constants.Vision.kBackLeftCameraName,
-                Constants.Vision.kRobotToBackLeftCamPose,
-                Constants.Vision.kPoseStrategy,
-                fieldLayoutSupplier,
-                mPoseEstimator::getPose3d));
-        mCameras.add(new PhotonCameraWrapper(
+        mCameras.add(new AprilTagCamera(
                 Constants.Vision.kFrontRightCameraName,
+                cameraIOFrontRight,
                 Constants.Vision.kRobotToFrontRightCamPose,
                 Constants.Vision.kPoseStrategy,
                 fieldLayoutSupplier,
                 mPoseEstimator::getPose3d));
-        mCameras.add(new PhotonCameraWrapper(
+        mCameras.add(new AprilTagCamera(
+                Constants.Vision.kBackLeftCameraName,
+                cameraIOBackLeft,
+                Constants.Vision.kRobotToBackLeftCamPose,
+                Constants.Vision.kPoseStrategy,
+                fieldLayoutSupplier,
+                mPoseEstimator::getPose3d));
+        mCameras.add(new AprilTagCamera(
                 Constants.Vision.kBackRightCameraName,
+                cameraIOBackRight,
                 Constants.Vision.kRobotToBackRightCamPose,
                 Constants.Vision.kPoseStrategy,
                 fieldLayoutSupplier,
@@ -85,7 +99,7 @@ public class Vision extends SubsystemBase {
 
     @Override
     public void periodic() {
-        mCameras.forEach(PhotonCameraWrapper::periodic);
+        mCameras.forEach(AprilTagCamera::periodic);
     }
 
     @Override

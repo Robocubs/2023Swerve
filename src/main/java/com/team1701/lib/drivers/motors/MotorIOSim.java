@@ -11,7 +11,6 @@ import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 public class MotorIOSim implements MotorIO {
     private final DCMotorSim mSim;
     private final PIDController mController;
-    private final double mReduction;
     private final double mLoopPeriodSeconds;
     private double mFeedForward;
     private double mVelocityRadiansPerSecond;
@@ -22,7 +21,6 @@ public class MotorIOSim implements MotorIO {
     public MotorIOSim(DCMotor motor, double reduction, double jKgMetersSquared, double loopPeriodSeconds) {
         mSim = new DCMotorSim(motor, 1.0 / reduction, jKgMetersSquared);
         mController = new PIDController(0.0, 0.0, 0.0, loopPeriodSeconds);
-        mReduction = reduction;
         mLoopPeriodSeconds = loopPeriodSeconds;
     }
 
@@ -34,7 +32,7 @@ public class MotorIOSim implements MotorIO {
 
         mSim.update(mLoopPeriodSeconds);
 
-        mVelocityRadiansPerSecond = mSim.getAngularVelocityRadPerSec() / mReduction;
+        mVelocityRadiansPerSecond = mSim.getAngularVelocityRadPerSec();
         mPositionRadians += mVelocityRadiansPerSecond * mLoopPeriodSeconds;
 
         inputs.positionRadians = mPositionRadians;
@@ -107,5 +105,13 @@ public class MotorIOSim implements MotorIO {
 
     public void disableContinuousInput() {
         mController.disableContinuousInput();
+    }
+
+    public Rotation2d getPosition() {
+        return new Rotation2d(mPositionRadians);
+    }
+
+    public double getVelocityRotationsPerSecond() {
+        return mVelocityRadiansPerSecond;
     }
 }

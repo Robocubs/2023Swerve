@@ -11,7 +11,7 @@ import com.team1701.robot.Constants;
 import edu.wpi.first.wpilibj.DriverStation;
 
 public final class DriveMotorFactory {
-    public static MotorIOSparkMax createDriveMotorIOSparkMax(int deviceId, boolean isInverted) {
+    public static MotorIOSparkMax createDriveMotorIOSparkMax(int deviceId) {
         var motor = new CANSparkMax(deviceId, MotorType.kBrushless);
         var encoder = motor.getEncoder();
         var controller = motor.getPIDController();
@@ -36,13 +36,13 @@ public final class DriveMotorFactory {
 
         configureWithRetry(() -> motor.burnFlash(), onError);
 
-        motor.setInverted(isInverted);
+        motor.setInverted(Constants.Drive.kDriveMotorsInverted);
         motor.setCANTimeout(0);
 
-        return new MotorIOSparkMax(motor);
+        return new MotorIOSparkMax(motor, Constants.Drive.kDriveReduction);
     }
 
-    public static MotorIOSparkMax createSteerMotorIOSparkMax(int deviceId, boolean isInverted) {
+    public static MotorIOSparkMax createSteerMotorIOSparkMax(int deviceId) {
         var motor = new CANSparkMax(deviceId, MotorType.kBrushless);
         var encoder = motor.getEncoder();
         var controller = motor.getPIDController();
@@ -71,10 +71,10 @@ public final class DriveMotorFactory {
 
         configureWithRetry(() -> motor.burnFlash(), onError);
 
-        motor.setInverted(isInverted);
+        motor.setInverted(Constants.Drive.kSteerMotorsInverted);
         motor.setCANTimeout(0);
 
-        return new MotorIOSparkMax(motor);
+        return new MotorIOSparkMax(motor, Constants.Drive.kSteerReduction);
     }
 
     private static void configureWithRetry(Supplier<REVLibError> config, Consumer<REVLibError> onFailure) {
