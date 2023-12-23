@@ -9,8 +9,8 @@ public interface MotorIO {
     public static class MotorInputs {
         public double positionRadians;
         public double velocityRadiansPerSecond;
-        public double[] positionRadiansSamples = new double[0];
-        public double[] velocityRadiansPerSecondSamples = new double[0];
+        public double[] positionRadiansSamples = new double[] {};
+        public double[] velocityRadiansPerSecondSamples = new double[] {};
     }
 
     public default void updateInputs(MotorInputs inputs) {}

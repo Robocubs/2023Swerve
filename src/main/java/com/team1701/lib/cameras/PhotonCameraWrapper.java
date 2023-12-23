@@ -23,6 +23,7 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 public class PhotonCameraWrapper {
     private final PhotonCamera mCamera;
     private final PhotonCameraInputs mCameraInputs;
+    private final String mLoggingPrefix;
     private final PhotonPoseEstimator mPoseEstimator;
     private final Transform3d mRobotToCamPose;
     private final Supplier<AprilTagFieldLayout> mFieldLayoutSupplier;
@@ -30,9 +31,6 @@ public class PhotonCameraWrapper {
     private final ArrayList<Consumer<EstimatedRobotPose>> mEstimatedPoseConsumers = new ArrayList<>();
     private final ArrayList<Predicate<PhotonTrackedTarget>> mTargetFilters = new ArrayList<>();
     private final ArrayList<Predicate<Pose3d>> mPoseFilters = new ArrayList<>();
-
-    private Pose3d mLastUnfilteredPose = new Pose3d();
-    private Pose3d mLastFilteredPose = new Pose3d();
 
     public PhotonCameraWrapper(
             String cameraName,
@@ -42,6 +40,7 @@ public class PhotonCameraWrapper {
             Supplier<Pose3d> robotPoseSupplier) {
         mCamera = new PhotonCamera(cameraName);
         mCameraInputs = new PhotonCameraInputs();
+        mLoggingPrefix = "Camera/" + mCamera.getName() + "/";
         mPoseEstimator = new PhotonPoseEstimator(fieldLayoutSupplier.get(), poseStrategy, mCamera, robotToCamPose);
         mPoseEstimator.setMultiTagFallbackStrategy(poseStrategy);
         mRobotToCamPose = robotToCamPose;
@@ -49,42 +48,56 @@ public class PhotonCameraWrapper {
         mRobotPoseSupplier = robotPoseSupplier;
     }
 
-    public void update() {
+    public void periodic() {
         mCameraInputs.isConnected = mCamera.isConnected();
         mCameraInputs.pipelineResult = mCamera.getLatestResult();
-        Logger.processInputs("Camera/" + mCamera.getName(), mCameraInputs);
+        Logger.processInputs(mLoggingPrefix, mCameraInputs);
 
         var pipelineResult = mCameraInputs.pipelineResult;
-        if (!pipelineResult.hasTargets()) {
+        var filteredPipelineResult = filterTargets(pipelineResult);
+        var robotPose = mRobotPoseSupplier.get();
+
+        Logger.recordOutput(mLoggingPrefix + "TargetPoses", getFieldRelativeTargetPoses(pipelineResult, robotPose));
+        Logger.recordOutput(
+                mLoggingPrefix + "FilteredTargetPoses", getFieldRelativeTargetPoses(filteredPipelineResult, robotPose));
+
+        if (!filteredPipelineResult.hasTargets()) {
             return;
         }
 
         mPoseEstimator.setFieldTags(mFieldLayoutSupplier.get());
-
-        var filteredPipelineResult = filterTargets(pipelineResult);
         var estimatedRobotPose = mPoseEstimator.update(filteredPipelineResult);
         if (estimatedRobotPose.isEmpty()) {
             return;
         }
 
-        mLastUnfilteredPose = estimatedRobotPose.get().estimatedPose;
+        Logger.recordOutput(mLoggingPrefix + "RobotPose", estimatedRobotPose.get().estimatedPose);
 
-        if (!mPoseFilters.stream().allMatch(filter -> filter.test(estimatedRobotPose.get().estimatedPose))) {
+        var estimatedPose = estimatedRobotPose.get().estimatedPose;
+        if (!mPoseFilters.stream().allMatch(filter -> filter.test(estimatedPose))) {
             return;
         }
 
-        mLastFilteredPose = estimatedRobotPose.get().estimatedPose;
         mEstimatedPoseConsumers.forEach(consumer -> consumer.accept(estimatedRobotPose.get()));
+        Logger.recordOutput(mLoggingPrefix + "FilteredRobotPose", estimatedRobotPose.get().estimatedPose);
     }
 
     private PhotonPipelineResult filterTargets(PhotonPipelineResult pipelineResult) {
-
         var filteredTargets = pipelineResult.getTargets().stream()
                 .filter(target -> mTargetFilters.stream().allMatch(filter -> filter.test(target)))
                 .toList();
         var filteredPipelineResult = new PhotonPipelineResult(pipelineResult.getLatencyMillis(), filteredTargets);
         filteredPipelineResult.setTimestampSeconds(pipelineResult.getTimestampSeconds());
         return filteredPipelineResult;
+    }
+
+    private Pose2d[] getFieldRelativeTargetPoses(PhotonPipelineResult pipelineResult, Pose3d robotPose) {
+        return pipelineResult.targets.stream()
+                .map(target -> robotPose
+                        .plus(mRobotToCamPose)
+                        .plus(target.getBestCameraToTarget())
+                        .toPose2d())
+                .toArray(Pose2d[]::new);
     }
 
     public void addEstimatedPoseConsumer(Consumer<EstimatedRobotPose> consumer) {
@@ -102,20 +115,5 @@ public class PhotonCameraWrapper {
     public void addToVisionSim(VisionSystemSim visionSim, SimCameraProperties cameraProperties) {
         var cameraSim = new PhotonCameraSim(mCamera, cameraProperties);
         visionSim.addCamera(cameraSim, mRobotToCamPose);
-    }
-
-    public void outputTelemetry() {
-        var cameraNamespace = "Camera/" + mCamera.getName();
-        Logger.recordOutput(cameraNamespace + "/UnfilteredRobotPose", mLastUnfilteredPose);
-        Logger.recordOutput(cameraNamespace + "/FilteredRobotPose", mLastFilteredPose);
-
-        var robotPose = mRobotPoseSupplier.get();
-        var targetPoses = mCameraInputs.pipelineResult.targets.stream()
-                .map(target -> robotPose
-                        .plus(mRobotToCamPose)
-                        .plus(target.getBestCameraToTarget())
-                        .toPose2d())
-                .toArray(Pose2d[]::new);
-        Logger.recordOutput(cameraNamespace + "/TargetPoses", targetPoses);
     }
 }

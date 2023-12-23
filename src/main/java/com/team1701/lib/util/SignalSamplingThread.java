@@ -19,7 +19,7 @@ public class SignalSamplingThread {
     private final Notifier mNotifier;
     private final double mFrequency;
 
-    private BaseStatusSignal[] mPhoenixSignals = new BaseStatusSignal[0];
+    private BaseStatusSignal[] mPhoenixSignals = new BaseStatusSignal[] {};
 
     public SignalSamplingThread(String name, double frequency) {
         mNotifier = new Notifier(this::periodic);

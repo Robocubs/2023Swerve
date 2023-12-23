@@ -8,26 +8,31 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 
 public class GyroIOSim implements GyroIO {
-    private final Supplier<ChassisSpeeds> mChassisSpeedsSupplier;
-    private final double mLoopPeriodSeconds;
-
+    private Supplier<Rotation2d> mYawSupplier;
     private boolean mYawSamplingEnabled;
 
     public GyroIOSim(Supplier<ChassisSpeeds> chassisSpeedsSupplier, double loopPeriodSeconds) {
-        mChassisSpeedsSupplier = chassisSpeedsSupplier;
-        mLoopPeriodSeconds = loopPeriodSeconds;
+        this(new Supplier<Rotation2d>() {
+            private double yawRadians;
+
+            @Override
+            public Rotation2d get() {
+                yawRadians += chassisSpeedsSupplier.get().omegaRadiansPerSecond * loopPeriodSeconds;
+                return Rotation2d.fromRadians(yawRadians);
+            }
+        });
     }
 
+    public GyroIOSim(Supplier<Rotation2d> yawSupplier) {
+        mYawSupplier = yawSupplier;
+    }
+
+    @Override
     public void updateInputs(GyroInputs inputs) {
         inputs.connected = true;
-
-        var chassisSpeeds = mChassisSpeedsSupplier.get();
-        var yaw = Rotation2d.fromRadians(
-                inputs.yaw.getRadians() + chassisSpeeds.omegaRadiansPerSecond * mLoopPeriodSeconds);
-        inputs.yaw = yaw;
-
+        inputs.yaw = mYawSupplier.get();
         if (mYawSamplingEnabled) {
-            inputs.yawSamples = new Rotation2d[] {yaw};
+            inputs.yawSamples = new Rotation2d[] {inputs.yaw};
         }
     }
 

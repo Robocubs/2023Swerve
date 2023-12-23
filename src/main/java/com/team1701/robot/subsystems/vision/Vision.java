@@ -8,18 +8,18 @@ import com.team1701.lib.cameras.PhotonCameraWrapper;
 import com.team1701.robot.Constants;
 import com.team1701.robot.Robot;
 import com.team1701.robot.estimation.PoseEstimator;
-import com.team1701.robot.subsystems.*;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 
-public class Vision extends Subsystem {
+public class Vision extends SubsystemBase {
     public static Vision mInstance = null;
 
+    private final PoseEstimator mPoseEstimator = PoseEstimator.getInstance();
     private final ArrayList<PhotonCameraWrapper> mCameras = new ArrayList<PhotonCameraWrapper>();
     private AprilTagFieldLayout mAprilTagFieldLayout = AprilTagFields.kDefaultField.loadAprilTagLayoutField();
     private Optional<VisionSystemSim> mVisionSim = Optional.empty();
@@ -34,33 +34,31 @@ public class Vision extends Subsystem {
 
     private Vision() {
         Supplier<AprilTagFieldLayout> fieldLayoutSupplier = () -> mAprilTagFieldLayout;
-        Supplier<Pose3d> robotPoseSupplier =
-                () -> new Pose3d(PoseEstimator.getInstance().get());
 
         mCameras.add(new PhotonCameraWrapper(
                 Constants.Vision.kFrontLeftCameraName,
                 Constants.Vision.kRobotToFrontLeftCamPose,
                 Constants.Vision.kPoseStrategy,
                 fieldLayoutSupplier,
-                robotPoseSupplier));
+                mPoseEstimator::getPose3d));
         mCameras.add(new PhotonCameraWrapper(
                 Constants.Vision.kBackLeftCameraName,
                 Constants.Vision.kRobotToBackLeftCamPose,
                 Constants.Vision.kPoseStrategy,
                 fieldLayoutSupplier,
-                robotPoseSupplier));
+                mPoseEstimator::getPose3d));
         mCameras.add(new PhotonCameraWrapper(
                 Constants.Vision.kFrontRightCameraName,
                 Constants.Vision.kRobotToFrontRightCamPose,
                 Constants.Vision.kPoseStrategy,
                 fieldLayoutSupplier,
-                robotPoseSupplier));
+                mPoseEstimator::getPose3d));
         mCameras.add(new PhotonCameraWrapper(
                 Constants.Vision.kBackRightCameraName,
                 Constants.Vision.kRobotToBackRightCamPose,
                 Constants.Vision.kPoseStrategy,
                 fieldLayoutSupplier,
-                robotPoseSupplier));
+                mPoseEstimator::getPose3d));
 
         if (Robot.isSimulation()) {
             var visionSim = new VisionSystemSim("main");
@@ -86,21 +84,17 @@ public class Vision extends Subsystem {
     }
 
     @Override
-    public void readPeriodicInputs() {
-        mVisionSim.ifPresent(sim -> sim.update(PoseEstimator.getInstance().get()));
-        mCameras.forEach(PhotonCameraWrapper::update);
+    public void periodic() {
+        mCameras.forEach(PhotonCameraWrapper::periodic);
     }
 
     @Override
-    public void writePeriodicOutputs() {}
+    public void simulationPeriodic() {
+        if (mVisionSim.isEmpty()) {
+            return;
+        }
 
-    @Override
-    public void stop() {}
-
-    @Override
-    public void outputTelemetry() {
-        mCameras.forEach(PhotonCameraWrapper::outputTelemetry);
-        mVisionSim.ifPresent(
-                sim -> Logger.recordOutput("Vision/SimPose", sim.getDebugField().getRobotPose()));
+        mVisionSim.get().update(mPoseEstimator.getPose2d());
+        Logger.recordOutput("Vision/SimPose", mVisionSim.get().getDebugField().getRobotPose());
     }
 }

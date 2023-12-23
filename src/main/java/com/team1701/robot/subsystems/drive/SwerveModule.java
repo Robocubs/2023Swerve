@@ -6,16 +6,13 @@ import com.team1701.lib.drivers.motors.MotorIO;
 import com.team1701.lib.drivers.motors.MotorInputsAutoLogged;
 import com.team1701.lib.util.GeometryUtil;
 import com.team1701.lib.util.SignalSamplingThread;
-import com.team1701.lib.util.Util;
 import com.team1701.robot.Constants;
-import com.team1701.robot.subsystems.Subsystem;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import org.littletonrobotics.junction.Logger;
 
-public class SwerveModule extends Subsystem {
+public class SwerveModule {
     private final int mIndex;
     private final MotorIO mDriveMotorIO;
     private final MotorIO mSteerMotorIO;
@@ -24,22 +21,14 @@ public class SwerveModule extends Subsystem {
     private final MotorInputsAutoLogged mSteerMotorInputs = new MotorInputsAutoLogged();
     private final EncoderInputsAutoLogged mSteerEncoderInputs = new EncoderInputsAutoLogged();
 
-    private double mDesiredVelocityRadiansPerSecond;
-    private Rotation2d mDesiredAngle = GeometryUtil.kRotationIdentity;
     private Rotation2d mMeasuredAngle = GeometryUtil.kRotationIdentity;
-    private double mAngleOffsetRadians;
-    private boolean mOrienting;
+    private Rotation2d mAngleOffset = GeometryUtil.kRotationIdentity;
 
-    public SwerveModule(
-            int index,
-            MotorIO driveMotorIO,
-            MotorIO steerMotorIO,
-            EncoderIO steerEncoderIO,
-            SignalSamplingThread odometryThread) {
+    public SwerveModule(int index, SwerveModuleIO moduleIO, SignalSamplingThread odometryThread) {
         mIndex = index;
-        mDriveMotorIO = driveMotorIO;
-        mSteerMotorIO = steerMotorIO;
-        mSteerEncoderIO = steerEncoderIO;
+        mDriveMotorIO = moduleIO.driveMotorIO;
+        mSteerMotorIO = moduleIO.steerMotorIO;
+        mSteerEncoderIO = moduleIO.steerEncoderIO;
 
         mDriveMotorIO.setPID(
                 Constants.Drive.kDriveKf.get(), Constants.Drive.kDriveKp.get(), 0, Constants.Drive.kDriveKd.get());
@@ -47,6 +36,33 @@ public class SwerveModule extends Subsystem {
 
         mDriveMotorIO.enablePositionSampling(odometryThread);
         mSteerMotorIO.enablePositionSampling(odometryThread);
+    }
+
+    // Separated from periodic to support thread locking of odometry inputs
+    public void updateInputs() {
+        mDriveMotorIO.updateInputs(mDriveMotorInputs);
+        mSteerMotorIO.updateInputs(mSteerMotorInputs);
+        mSteerEncoderIO.updateInputs(mSteerEncoderInputs);
+    }
+
+    public void periodic() {
+        Logger.processInputs("Drive/Module/" + mIndex + "/Drive", mDriveMotorInputs);
+        Logger.processInputs("Drive/Module/" + mIndex + "/Steer", mSteerMotorInputs);
+        Logger.processInputs("Drive/Module/" + mIndex + "/AbsoluteEncoder", mSteerEncoderInputs);
+
+        mMeasuredAngle = toModuleAngle(new Rotation2d(mSteerMotorInputs.positionRadians));
+
+        var hashCode = hashCode();
+        if (Constants.Drive.kDriveKf.hasChanged(hashCode)
+                || Constants.Drive.kDriveKp.hasChanged(hashCode)
+                || Constants.Drive.kDriveKd.hasChanged(hashCode)) {
+            mDriveMotorIO.setPID(
+                    Constants.Drive.kDriveKf.get(), Constants.Drive.kDriveKp.get(), 0, Constants.Drive.kDriveKd.get());
+        }
+
+        if (Constants.Drive.kSteerKp.hasChanged(hashCode) || Constants.Drive.kSteerKd.hasChanged(hashCode)) {
+            mSteerMotorIO.setPID(0, Constants.Drive.kSteerKp.get(), 0, Constants.Drive.kSteerKd.get());
+        }
     }
 
     public SwerveModulePosition getPosition() {
@@ -68,9 +84,7 @@ public class SwerveModule extends Subsystem {
                     mDriveMotorInputs.positionRadiansSamples[i]
                             * Constants.Drive.kDriveReduction
                             * Constants.Drive.kWheelRadiusMeters,
-                    new Rotation2d(MathUtil.angleModulus(
-                            mSteerMotorInputs.positionRadiansSamples[i] * Constants.Drive.kSteerReduction
-                                    + mAngleOffsetRadians)));
+                    toModuleAngle(new Rotation2d(mSteerMotorInputs.positionRadiansSamples[i])));
         }
 
         return states;
@@ -85,16 +99,14 @@ public class SwerveModule extends Subsystem {
     }
 
     public void setState(SwerveModuleState state) {
-        mDesiredVelocityRadiansPerSecond =
-                state.speedMetersPerSecond / Constants.Drive.kDriveReduction / Constants.Drive.kWheelRadiusMeters;
-        mDesiredAngle = state.angle;
-        mOrienting = false;
+        mDriveMotorIO.setVelocityControl(
+                state.speedMetersPerSecond / Constants.Drive.kDriveReduction / Constants.Drive.kWheelRadiusMeters);
+        mSteerMotorIO.setPositionControl(state.angle.minus(mAngleOffset).div(Constants.Drive.kSteerReduction));
     }
 
     public void setOrient(Rotation2d steerAngle) {
-        mDesiredVelocityRadiansPerSecond = 0;
-        mDesiredAngle = steerAngle;
-        mOrienting = true;
+        mDriveMotorIO.setPercentOutput(0);
+        mSteerMotorIO.setPositionControl(steerAngle.minus(mAngleOffset).div(Constants.Drive.kSteerReduction));
     }
 
     public void setDriveBrakeMode(boolean enable) {
@@ -106,53 +118,18 @@ public class SwerveModule extends Subsystem {
     }
 
     public void zeroSteeringMotor() {
-        mAngleOffsetRadians = MathUtil.angleModulus(mSteerEncoderInputs.position.getRadians()
-                - mSteerMotorInputs.positionRadians * Constants.Drive.kSteerReduction);
-        mMeasuredAngle = new Rotation2d(MathUtil.angleModulus(
-                mSteerMotorInputs.positionRadians * Constants.Drive.kSteerReduction + mAngleOffsetRadians));
+        mAngleOffset = mSteerEncoderInputs.position.minus(
+                new Rotation2d(mSteerMotorInputs.positionRadians).times(Constants.Drive.kSteerReduction));
+        mMeasuredAngle = mSteerEncoderInputs.position;
     }
 
-    @Override
-    public void readPeriodicInputs() {
-        mDriveMotorIO.updateInputs(mDriveMotorInputs);
-        mSteerMotorIO.updateInputs(mSteerMotorInputs);
-        mSteerEncoderIO.updateInputs(mSteerEncoderInputs);
-        Logger.processInputs("Drive/Module/" + mIndex + "/Drive", mDriveMotorInputs);
-        Logger.processInputs("Drive/Module/" + mIndex + "/Steer", mSteerMotorInputs);
-        Logger.processInputs("Drive/Module/" + mIndex + "/AbsoluteEncoder", mSteerEncoderInputs);
-        mMeasuredAngle = new Rotation2d(MathUtil.angleModulus(
-                mSteerMotorInputs.positionRadians * Constants.Drive.kSteerReduction + mAngleOffsetRadians));
+    public void stop() {
+        mDriveMotorIO.setPercentOutput(0.0);
+        mSteerMotorIO.setPercentOutput(0.0);
     }
 
-    @Override
-    public void writePeriodicOutputs() {
-        var hashCode = hashCode();
-        if (Constants.Drive.kDriveKf.hasChanged(hashCode)
-                || Constants.Drive.kDriveKp.hasChanged(hashCode)
-                || Constants.Drive.kDriveKd.hasChanged(hashCode)) {
-            mDriveMotorIO.setPID(
-                    Constants.Drive.kDriveKf.get(), Constants.Drive.kDriveKp.get(), 0, Constants.Drive.kDriveKd.get());
-        }
-
-        if (Constants.Drive.kSteerKp.hasChanged(hashCode) || Constants.Drive.kSteerKd.hasChanged(hashCode)) {
-            mSteerMotorIO.setPID(0, Constants.Drive.kSteerKp.get(), 0, Constants.Drive.kSteerKd.get());
-        }
-
-        var velocityNearZero = Util.epsilonEquals(mDesiredVelocityRadiansPerSecond, 0)
-                && Util.epsilonEquals(mDriveMotorInputs.velocityRadiansPerSecond, 0, 0.2);
-        if (mOrienting || velocityNearZero) {
-            mDriveMotorIO.setPercentOutput(0);
-        } else {
-            mDriveMotorIO.setVelocityControl(mDesiredVelocityRadiansPerSecond);
-        }
-
-        mSteerMotorIO.setPositionControl(
-                mDesiredAngle.minus(Rotation2d.fromRadians(mAngleOffsetRadians)).div(Constants.Drive.kSteerReduction));
+    private Rotation2d toModuleAngle(Rotation2d steerMotorPosition) {
+        return GeometryUtil.angleModulus(
+                steerMotorPosition.times(Constants.Drive.kSteerReduction).plus(mAngleOffset));
     }
-
-    @Override
-    public void stop() {}
-
-    @Override
-    public void outputTelemetry() {}
 }

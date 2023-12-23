@@ -11,9 +11,7 @@ public final class Constants {
     public static final double kLoopPeriodSeconds = 0.02;
 
     public static final class Controls {
-        public static final double kDriverMagDeadZone = 0.09;
-        public static final double kDriverXDeadZone = 0.09;
-        public static final double kDriverYDeadZone = 0.09;
+        public static final double kDriverDeadband = 0.09;
     }
 
     public static final class Motors {
@@ -25,15 +23,14 @@ public final class Constants {
         protected static final double kL2DriveReduction = (14.0 / 50.0) * (27.0 / 17.0) * (15.0 / 45.0);
         protected static final double kL3DriveReduction = (14.0 / 50.0) * (28.0 / 16.0) * (15.0 / 45.0);
         protected static final double k16ToothKitReduction = (16.0 / 14.0);
-
         protected static final double kMk4SteerReduction = 1.0 / 12.8;
         protected static final double kMk4iSteerReduction = 7.0 / 150.0;
 
         public static final double kOdometryFrequency = 250.0;
-
         public static final double kWheelRadiusMeters;
         public static final double kMaxVelocityMetersPerSecond;
         public static final double kMaxAngularVelocityRadiansPerSecond;
+        public static final double kMinLockVelocityMetersPerSecond = 0.2;
         public static final boolean kMotorsInverted;
         public static final double kDriveReduction;
         public static final double kSteerReduction;

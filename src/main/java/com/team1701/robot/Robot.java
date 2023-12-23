@@ -5,11 +5,12 @@
 package com.team1701.robot;
 
 import com.team1701.robot.Configuration.Mode;
-import com.team1701.robot.estimation.PoseEstimator;
-import com.team1701.robot.loops.LoopRunner;
+import com.team1701.robot.commands.JoystickDriveCommand;
 import com.team1701.robot.subsystems.drive.Drive;
 import com.team1701.robot.subsystems.vision.Vision;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -18,24 +19,18 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 public class Robot extends LoggedRobot {
-    private final LoopRunner mEnabledLooper = new LoopRunner("enabled");
-    private final LoopRunner mDisabledLooper = new LoopRunner("disabled");
-    private final ControllerManager mControllerManager = ControllerManager.getInstance();
-    private final SubsystemManager mSubsystemManager = SubsystemManager.getInstance();
-    private final Drive mDrive = Drive.getInstance();
-    private final Vision mVision = Vision.getInstance();
-    private final PoseEstimator mPoseEstimator = PoseEstimator.getInstance();
+    // Subsystems (Public to avoid use checks)
+    public final Drive mDrive = Drive.getInstance();
+    public final Vision mVision = Vision.getInstance();
+
+    // Controllers
+    private final CommandXboxController mDriverController = new CommandXboxController(0);
 
     @Override
     public void robotInit() {
         initializeAdvantageKit();
-
-        mSubsystemManager.setSubsystems(mDrive, mVision);
-        mSubsystemManager.registerEnabledLoops(mEnabledLooper);
-        mSubsystemManager.registerDisabledLoops(mDisabledLooper);
-        mSubsystemManager.outputTelemetry();
-
-        createJoystickHandlers();
+        setupDefaultCommands();
+        setupControllerBindings();
     }
 
     private void initializeAdvantageKit() {
@@ -79,28 +74,25 @@ public class Robot extends LoggedRobot {
         Logger.start();
     }
 
-    private void createJoystickHandlers() {
-        var driver = mControllerManager.getDriverJoystick();
+    private void setupDefaultCommands() {
+        mDrive.setDefaultCommand(new JoystickDriveCommand(
+                () -> -mDriverController.getLeftY(),
+                () -> -mDriverController.getLeftX(),
+                () -> -mDriverController.getRightX()));
+    }
 
-        driver.onButtonPressed(ControllerManager.kXBOXButtonX, () -> {
-            mDrive.zeroGyroscope();
-        });
+    private void setupControllerBindings() {
+        mDriverController.x().onTrue(Commands.runOnce(() -> mDrive.zeroGyroscope()));
     }
 
     @Override
     public void robotPeriodic() {
-        mEnabledLooper.loop();
-        mDisabledLooper.loop();
-        mSubsystemManager.outputTelemetry();
-        mEnabledLooper.outputTelemetry();
-        mDisabledLooper.outputTelemetry();
-        mPoseEstimator.outputTelemetry();
+        CommandScheduler.getInstance().run();
     }
 
     @Override
     public void autonomousInit() {
-        mDisabledLooper.stop();
-        mEnabledLooper.start();
+        mDrive.zeroModules();
     }
 
     @Override
@@ -109,40 +101,13 @@ public class Robot extends LoggedRobot {
     @Override
     public void teleopInit() {
         mDrive.zeroModules();
-        mDisabledLooper.stop();
-        mControllerManager.resetHandlers();
-        mEnabledLooper.start();
     }
 
     @Override
-    public void teleopPeriodic() {
-        mControllerManager.invokeHandlers();
-        drive();
-    }
-
-    private void drive() {
-        var throttle = -mControllerManager.getDriverJoystick().getY();
-        var strafe = -mControllerManager.getDriverJoystick().getX();
-        var rot = -mControllerManager.getDriverJoystick().getZWithDeadZone();
-        var mag = Math.hypot(throttle, strafe);
-
-        if (mag < Constants.Controls.kDriverMagDeadZone) {
-            mDrive.setVelocity(new ChassisSpeeds(0, 0, rot * Constants.Drive.kMaxAngularVelocityRadiansPerSecond));
-        } else {
-            mDrive.setVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(
-                    throttle * Constants.Drive.kMaxVelocityMetersPerSecond,
-                    strafe * Constants.Drive.kMaxVelocityMetersPerSecond,
-                    rot * Constants.Drive.kMaxAngularVelocityRadiansPerSecond,
-                    mDrive.getFieldRelativeRotation()));
-        }
-    }
+    public void teleopPeriodic() {}
 
     @Override
-    public void disabledInit() {
-
-        mEnabledLooper.stop();
-        mDisabledLooper.start();
-    }
+    public void disabledInit() {}
 
     @Override
     public void disabledPeriodic() {}

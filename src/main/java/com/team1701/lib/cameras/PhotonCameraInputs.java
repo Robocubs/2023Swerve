@@ -3,7 +3,7 @@ package com.team1701.lib.cameras;
 import java.util.ArrayList;
 import java.util.stream.DoubleStream;
 
-import com.team1701.lib.util.LoggingUtil;
+import edu.wpi.first.math.geometry.Transform3d;
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 import org.photonvision.targeting.PhotonPipelineResult;
@@ -35,9 +35,8 @@ public class PhotonCameraInputs implements LoggableInputs {
             table.put(targetNamespace + "Area", target.getArea());
             table.put(targetNamespace + "FiducialID", target.getFiducialId());
             table.put(targetNamespace + "PoseAmbiguity", target.getPoseAmbiguity());
-
-            LoggingUtil.put(table, targetNamespace + "Pose", target.getBestCameraToTarget());
-            LoggingUtil.put(table, targetNamespace + "AltPose", target.getAlternateCameraToTarget());
+            table.put(targetNamespace + "Pose", target.getBestCameraToTarget());
+            table.put(targetNamespace + "AltPose", target.getBestCameraToTarget());
 
             var minAreaRectCorners = target.getMinAreaRectCorners().stream()
                     .flatMapToDouble(c -> DoubleStream.of(c.x, c.y))
@@ -63,14 +62,14 @@ public class PhotonCameraInputs implements LoggableInputs {
         for (int i = 0; i < targetCount; i++) {
             var targetNamespace = "Target/" + i + "/";
 
-            var minAreaRectCornerCords = table.get(targetNamespace + "MinAreaRectCorners", new double[0]);
+            var minAreaRectCornerCords = table.get(targetNamespace + "MinAreaRectCorners", new double[] {});
             var minAreaRectCorners = new ArrayList<TargetCorner>(4);
             for (int j = 0; j < minAreaRectCornerCords.length / 2; j++) {
                 minAreaRectCorners.add(
                         j, new TargetCorner(minAreaRectCornerCords[j * 2], minAreaRectCornerCords[j * 2 + 1]));
             }
 
-            var detectedCornerCords = table.get(targetNamespace + "DetectedCorners", new double[0]);
+            var detectedCornerCords = table.get(targetNamespace + "DetectedCorners", new double[] {});
             var detectedCorners = new ArrayList<TargetCorner>(detectedCornerCords.length);
             for (int j = 0; j < detectedCornerCords.length / 2; j++) {
                 detectedCorners.add(new TargetCorner(detectedCornerCords[j * 2], detectedCornerCords[j * 2 + 1]));
@@ -84,8 +83,8 @@ public class PhotonCameraInputs implements LoggableInputs {
                     table.get(targetNamespace + "Area", 0.0),
                     table.get(targetNamespace + "Skew", 0.0),
                     table.get(targetNamespace + "FiducialID", legacyFiducialID),
-                    LoggingUtil.getTransform3d(table, targetNamespace + "Pose"),
-                    LoggingUtil.getTransform3d(table, targetNamespace + "AltPose"),
+                    table.get(targetNamespace + "Pose", new Transform3d()),
+                    table.get(targetNamespace + "AltPose", new Transform3d()),
                     table.get(targetNamespace + "PoseAmbiguity", 0.0),
                     minAreaRectCorners,
                     detectedCorners);

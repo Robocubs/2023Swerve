@@ -17,25 +17,28 @@ import com.team1701.lib.swerve.SwerveSetpointGenerator;
 import com.team1701.lib.swerve.SwerveSetpointGenerator.KinematicLimits;
 import com.team1701.lib.util.GeometryUtil;
 import com.team1701.lib.util.SignalSamplingThread;
+import com.team1701.lib.util.TimeLockedBoolean;
+import com.team1701.lib.util.Util;
 import com.team1701.robot.Configuration;
 import com.team1701.robot.Configuration.Mode;
 import com.team1701.robot.Constants;
 import com.team1701.robot.estimation.PoseEstimator;
-import com.team1701.robot.loops.Loop;
-import com.team1701.robot.loops.Looper;
-import com.team1701.robot.subsystems.Subsystem;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Drive extends Subsystem {
-    private static Drive mInstance;
+public class Drive extends SubsystemBase {
+    private static Drive mInstance = null;
 
+    private final PoseEstimator mPoseEstimator = PoseEstimator.getInstance();
     private final GyroInputsAutoLogged mGyroInputs = new GyroInputsAutoLogged();
     private final GyroIO mGyroIO;
     private final SwerveModule[] mModules;
@@ -45,12 +48,15 @@ public class Drive extends Subsystem {
 
     private KinematicLimits mKinematicLimits = Constants.Drive.kFastKinematicLimits;
     private ChassisSpeeds mDesiredChassisSpeeds = new ChassisSpeeds();
-    private SwerveSetpoint mDesiredSetpoint = new SwerveSetpoint(Constants.Drive.kNumModules);
-    private SwerveModuleState[] mMeasuredModuleStates;
+    private SwerveSetpoint mPreviousSetpoint = new SwerveSetpoint(Constants.Drive.kNumModules);
     private SwerveModulePosition[] mMeasuredModulePositions;
     private Rotation2d mFieldRelativeHeading = GeometryUtil.kRotationIdentity;
     private Rotation2d mYawOffset = GeometryUtil.kRotationIdentity;
     private double mPreviousOdometryTimestamp = 0.0;
+    private TimeLockedBoolean mWasMovingRecently = new TimeLockedBoolean(1.0, 0.0, false, false);
+
+    @AutoLogOutput(key = "Drive/MeasuredStates")
+    private SwerveModuleState[] mMeasuredModuleStates;
 
     public static Drive getInstance() {
         if (mInstance == null) {
@@ -68,40 +74,32 @@ public class Drive extends Subsystem {
         Arrays.setAll(mMeasuredModulePositions, i -> new SwerveModulePosition());
 
         GyroIO gyroIO = null;
-        SwerveModule[] modules = null;
+        SwerveModuleIO[] moduleIOs = null;
         if (Configuration.getMode() != Mode.REPLAY) {
             switch (Configuration.getRobot()) {
                 case SWERVE_BOT:
                     gyroIO = new GyroIOPigeon2(10);
-                    var configurations = new SwerveModuleConfiguration[] {
-                        new SwerveModuleConfiguration(10, 11, 0),
-                        new SwerveModuleConfiguration(12, 13, 1),
-                        new SwerveModuleConfiguration(16, 17, 3),
-                        new SwerveModuleConfiguration(14, 15, 2),
-                    };
-
-                    modules = new SwerveModule[configurations.length];
-                    for (var i = 0; i < modules.length; i++) {
-                        modules[i] = new SwerveModule(
-                                i,
-                                DriveMotorFactory.createDriveMotorIOSparkMax(
-                                        configurations[i].driveId, Constants.Drive.kMotorsInverted),
-                                DriveMotorFactory.createSteerMotorIOSparkMax(
-                                        configurations[i].steerId, Constants.Drive.kMotorsInverted),
-                                new EncoderIOAnalog(configurations[i].steerId),
-                                mOdometryThread);
-                    }
-
+                    moduleIOs = Stream.of(new SwerveModuleConfiguration[] {
+                                new SwerveModuleConfiguration(10, 11, 0),
+                                new SwerveModuleConfiguration(12, 13, 1),
+                                new SwerveModuleConfiguration(16, 17, 3),
+                                new SwerveModuleConfiguration(14, 15, 2),
+                            })
+                            .map(config -> new SwerveModuleIO(
+                                    DriveMotorFactory.createDriveMotorIOSparkMax(
+                                            config.driveId, Constants.Drive.kMotorsInverted),
+                                    DriveMotorFactory.createSteerMotorIOSparkMax(
+                                            config.steerId, Constants.Drive.kMotorsInverted),
+                                    new EncoderIOAnalog(config.steerId)))
+                            .toArray(SwerveModuleIO[]::new);
                     break;
                 case SIMULATION_BOT:
                     gyroIO = new GyroIOSim(
                             () -> Constants.Drive.kKinematics.toChassisSpeeds(mMeasuredModuleStates),
                             Constants.kLoopPeriodSeconds);
-
-                    final var simModules = new SwerveModule[Constants.Drive.kNumModules];
-                    modules = simModules;
-                    for (var i = 0; i < simModules.length; i++) {
-                        final var index = i;
+                    moduleIOs = new SwerveModuleIO[Constants.Drive.kNumModules];
+                    for (var i = 0; i < moduleIOs.length; i++) {
+                        var index = i;
                         var driveMotor = new MotorIOSim(
                                 DCMotor.getNEO(1), Constants.Drive.kDriveReduction, 0.14, Constants.kLoopPeriodSeconds);
                         var steerMotor = new MotorIOSim(
@@ -110,11 +108,9 @@ public class Drive extends Subsystem {
                                 0.004,
                                 Constants.kLoopPeriodSeconds);
                         steerMotor.enableContinuousInput(0, 2 * Math.PI / Constants.Drive.kSteerReduction);
-                        var steerEncoder = new EncoderIOSim(() -> simModules[index].getPosition().angle);
-                        simModules[index] =
-                                new SwerveModule(index, driveMotor, steerMotor, steerEncoder, mOdometryThread);
+                        var steerEncoder = new EncoderIOSim(() -> mMeasuredModulePositions[index].angle);
+                        moduleIOs[i] = new SwerveModuleIO(driveMotor, steerMotor, steerEncoder);
                     }
-
                     break;
                 default:
                     break;
@@ -127,120 +123,31 @@ public class Drive extends Subsystem {
 
         gyroIO.enableYawSampling(mOdometryThread);
 
-        if (modules == null) {
-            modules = new SwerveModule[Constants.Drive.kNumModules];
-            Arrays.setAll(
-                    modules,
-                    i -> new SwerveModule(i, new MotorIO() {}, new MotorIO() {}, new EncoderIO() {}, mOdometryThread));
+        if (moduleIOs == null) {
+            moduleIOs = new SwerveModuleIO[Constants.Drive.kNumModules];
+            Arrays.setAll(moduleIOs, i -> new SwerveModuleIO(new MotorIO() {}, new MotorIO() {}, new EncoderIO() {}));
         }
 
-        for (var module : modules) {
+        mGyroIO = gyroIO;
+        mModules = new SwerveModule[moduleIOs.length];
+        for (var i = 0; i < mModules.length; i++) {
+            mModules[i] = new SwerveModule(i, moduleIOs[i], mOdometryThread);
+        }
+
+        for (var module : mModules) {
             module.setSteerBrakeMode(false);
             module.setDriveBrakeMode(false);
         }
 
-        mGyroIO = gyroIO;
-        mModules = modules;
-
         updateInputs();
         zeroModules();
-        setModuleSetpointsFromMeasured();
-    }
-
-    public SignalSamplingThread getOdometryThread() {
-        return mOdometryThread;
-    }
-
-    public void setVelocity(ChassisSpeeds chassisSpeeds) {
-        mDesiredChassisSpeeds = chassisSpeeds;
-    }
-
-    public Rotation2d getFieldRelativeRotation() {
-        return mFieldRelativeHeading;
-    }
-
-    public void zeroGyroscope() {
-        zeroGyroscope(GeometryUtil.kRotationIdentity);
-    }
-
-    public void zeroGyroscope(Rotation2d rotation) {
-        mYawOffset = mGyroInputs.yaw.minus(rotation);
-        mFieldRelativeHeading = rotation;
-    }
-
-    public void zeroModules() {
-        for (var module : mModules) {
-            module.zeroSteeringMotor();
-        }
-
-        mMeasuredModuleStates = Stream.of(mModules).map(SwerveModule::getState).toArray(SwerveModuleState[]::new);
-        mMeasuredModulePositions =
-                Stream.of(mModules).map(SwerveModule::getPosition).toArray(SwerveModulePosition[]::new);
-
-        PoseEstimator.getInstance()
-                .resetPosition(
-                        mGyroInputs.yaw,
-                        mMeasuredModulePositions,
-                        PoseEstimator.getInstance().get());
-    }
-
-    private void setModuleSetpointsFromMeasured() {
-        mDesiredSetpoint.mChassisSpeeds =
-                Constants.Drive.kKinematics.toChassisSpeedWheelConstraints(mDesiredSetpoint.mModuleStates);
-        for (var i = 0; i < mModules.length; ++i) {
-            mDesiredSetpoint.mModuleStates[i] = mMeasuredModuleStates[i];
-        }
-    }
-
-    private void updateDesiredStates() {
-        // Calculate the output chassis speeds to make the desired move in the next loop
-        var desiredRelativePose = new Pose2d(
-                mDesiredChassisSpeeds.vxMetersPerSecond * Constants.kLoopPeriodSeconds,
-                mDesiredChassisSpeeds.vyMetersPerSecond * Constants.kLoopPeriodSeconds,
-                Rotation2d.fromRadians(mDesiredChassisSpeeds.omegaRadiansPerSecond * Constants.kLoopPeriodSeconds));
-        var twistToDesiredPose = GeometryUtil.kPoseIdentity.log(desiredRelativePose);
-        var outputChassisSpeeds = new ChassisSpeeds(
-                twistToDesiredPose.dx / Constants.kLoopPeriodSeconds,
-                twistToDesiredPose.dy / Constants.kLoopPeriodSeconds,
-                twistToDesiredPose.dtheta / Constants.kLoopPeriodSeconds);
-        mDesiredSetpoint = mSetpointGenerator.generateSetpoint(
-                mKinematicLimits, mDesiredSetpoint, outputChassisSpeeds, Constants.kLoopPeriodSeconds);
-        for (var i = 0; i < mDesiredSetpoint.mModuleStates.length; i++) {
-            mModules[i].setState(mDesiredSetpoint.mModuleStates[i]);
-        }
     }
 
     @Override
-    public void registerEnabledLoops(Looper looper) {
-        looper.register(new Loop() {
-            @Override
-            public void onStart(double timestamp) {
-                setModuleSetpointsFromMeasured();
-                setVelocity(new ChassisSpeeds());
-                mKinematicLimits = Constants.Drive.kUncappedKinematicLimits;
-            }
-
-            @Override
-            public void onLoop(double timestamp) {
-                updateDesiredStates();
-            }
-
-            @Override
-            public void onStop(double timestamp) {
-                stop();
-            }
-
-            @Override
-            public String getDisplayName() {
-                return Drive.class.getSimpleName();
-            }
-        });
-    }
-
-    @Override
-    public void readPeriodicInputs() {
+    public void periodic() {
         updateInputs();
         updateOdometry();
+        updateDesiredStates();
     }
 
     private void updateInputs() {
@@ -248,7 +155,7 @@ public class Drive extends Subsystem {
         odometryLock.lock();
         try {
             for (var module : mModules) {
-                module.readPeriodicInputs();
+                module.updateInputs();
             }
 
             mGyroIO.updateInputs(mGyroInputs);
@@ -258,11 +165,20 @@ public class Drive extends Subsystem {
 
         Logger.processInputs("Drive/Gyro", mGyroInputs);
 
+        for (var module : mModules) {
+            module.periodic();
+        }
+
         mMeasuredModuleStates = Stream.of(mModules).map(SwerveModule::getState).toArray(SwerveModuleState[]::new);
         mMeasuredModulePositions =
                 Stream.of(mModules).map(SwerveModule::getPosition).toArray(SwerveModulePosition[]::new);
 
         mFieldRelativeHeading = mGyroInputs.yaw.minus(mYawOffset);
+
+        var timestamp = Timer.getFPGATimestamp();
+        for (var state : mMeasuredModuleStates) {
+            mWasMovingRecently.update(!Util.epsilonEquals(state.speedMetersPerSecond, 0.0, 0.02), timestamp);
+        }
     }
 
     private void updateOdometry() {
@@ -285,36 +201,86 @@ public class Drive extends Subsystem {
                 modulePositions[j] = modulePositionSamples[j][i];
             }
 
-            PoseEstimator.getInstance().updateWithTime(sampleTime, yawSamples[i], modulePositions);
+            mPoseEstimator.updateWithTime(sampleTime, yawSamples[i], modulePositions);
             sampleTime += sampleDt;
         }
 
-        PoseEstimator.getInstance().update(mGyroInputs.yaw, mMeasuredModulePositions);
+        mPoseEstimator.update(mGyroInputs.yaw, mMeasuredModulePositions);
 
         mPreviousOdometryTimestamp = timestamp;
     }
 
-    @Override
-    public void writePeriodicOutputs() {
-        for (var module : mModules) {
-            module.writePeriodicOutputs();
+    private void updateDesiredStates() {
+        var desiredChassisSpeedIsZero = Util.epsilonEquals(mDesiredChassisSpeeds.vxMetersPerSecond, 0.0)
+                && Util.epsilonEquals(mDesiredChassisSpeeds.vyMetersPerSecond, 0.0)
+                && Util.epsilonEquals(mDesiredChassisSpeeds.omegaRadiansPerSecond, 0.0);
+        var wasMovingRecently = mWasMovingRecently.update(!desiredChassisSpeedIsZero, Timer.getFPGATimestamp());
+        if (DriverStation.isDisabled() || !wasMovingRecently) {
+            for (var module : mModules) {
+                module.stop();
+            }
+
+            mPreviousSetpoint = new SwerveSetpoint(Constants.Drive.kKinematics, mMeasuredModuleStates);
+            Logger.recordOutput("Drive/DesiredStates", new SwerveModuleState[] {});
+            return;
         }
+
+        var desiredRelativePose = new Pose2d(
+                mDesiredChassisSpeeds.vxMetersPerSecond * Constants.kLoopPeriodSeconds,
+                mDesiredChassisSpeeds.vyMetersPerSecond * Constants.kLoopPeriodSeconds,
+                Rotation2d.fromRadians(mDesiredChassisSpeeds.omegaRadiansPerSecond * Constants.kLoopPeriodSeconds));
+        var twistToDesiredPose = GeometryUtil.kPoseIdentity.log(desiredRelativePose);
+        var outputChassisSpeeds = new ChassisSpeeds(
+                twistToDesiredPose.dx / Constants.kLoopPeriodSeconds,
+                twistToDesiredPose.dy / Constants.kLoopPeriodSeconds,
+                twistToDesiredPose.dtheta / Constants.kLoopPeriodSeconds);
+        var desiredSetpoint = mSetpointGenerator.generateSetpoint(
+                mKinematicLimits, mPreviousSetpoint, outputChassisSpeeds, Constants.kLoopPeriodSeconds);
+        for (var i = 0; i < mModules.length; i++) {
+            mModules[i].setState(desiredSetpoint.moduleStates[i]);
+        }
+
+        mPreviousSetpoint = desiredSetpoint;
+        Logger.recordOutput("Drive/DesiredStates", desiredSetpoint.moduleStates);
     }
 
-    @Override
+    public void setVelocity(ChassisSpeeds chassisSpeeds) {
+        mDesiredChassisSpeeds = chassisSpeeds;
+    }
+
+    @AutoLogOutput()
+    public Rotation2d getFieldRelativeHeading() {
+        return mFieldRelativeHeading;
+    }
+
+    @AutoLogOutput
+    public double getSpeedMetersPerSecond() {
+        var chassisSpeeds = Constants.Drive.kKinematics.toChassisSpeeds(mMeasuredModuleStates);
+        return Math.hypot(chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond);
+    }
+
+    public void zeroGyroscope() {
+        zeroGyroscope(GeometryUtil.kRotationIdentity);
+    }
+
+    public void zeroGyroscope(Rotation2d rotation) {
+        mYawOffset = mGyroInputs.yaw.minus(rotation);
+        mFieldRelativeHeading = rotation;
+    }
+
+    public void zeroModules() {
+        for (var module : mModules) {
+            module.zeroSteeringMotor();
+        }
+
+        mMeasuredModuleStates = Stream.of(mModules).map(SwerveModule::getState).toArray(SwerveModuleState[]::new);
+        mMeasuredModulePositions =
+                Stream.of(mModules).map(SwerveModule::getPosition).toArray(SwerveModulePosition[]::new);
+
+        mPoseEstimator.resetPosition(mGyroInputs.yaw, mMeasuredModulePositions, mPoseEstimator.getPose2d());
+    }
+
     public void stop() {
-        mDesiredChassisSpeeds = new ChassisSpeeds();
-    }
-
-    @Override
-    public void outputTelemetry() {
-        Logger.recordOutput("Drive/Gyro/FieldRelativeRad", mFieldRelativeHeading.getRadians());
-        Logger.recordOutput("Drive/Gyro/FieldRelativeDeg", mFieldRelativeHeading.getDegrees());
-        Logger.recordOutput("Drive/MeasuredStates", mMeasuredModuleStates);
-        Logger.recordOutput("Drive/DesiredStates", mDesiredSetpoint.mModuleStates);
-
-        for (var module : mModules) {
-            module.outputTelemetry();
-        }
+        setVelocity(new ChassisSpeeds());
     }
 }
