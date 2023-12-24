@@ -22,6 +22,7 @@ public class SwerveModule {
 
     private Rotation2d mMeasuredAngle = GeometryUtil.kRotationIdentity;
     private Rotation2d mAngleOffset = GeometryUtil.kRotationIdentity;
+    private boolean mAngleOffsetNotInitialized = true;
 
     public SwerveModule(int index, SwerveModuleIO moduleIO) {
         mIndex = index;
@@ -45,6 +46,12 @@ public class SwerveModule {
         Logger.processInputs("Drive/Module/" + mIndex + "/Drive", mDriveMotorInputs);
         Logger.processInputs("Drive/Module/" + mIndex + "/Steer", mSteerMotorInputs);
         Logger.processInputs("Drive/Module/" + mIndex + "/AbsoluteEncoder", mSteerEncoderInputs);
+
+        // Zero the steering motor position on the first loop after receiving an absolute encoder position
+        if (mAngleOffsetNotInitialized && !mSteerEncoderInputs.position.equals(GeometryUtil.kRotationIdentity)) {
+            zeroSteeringMotor();
+            mAngleOffsetNotInitialized = false;
+        }
 
         mMeasuredAngle = toModuleAngle(new Rotation2d(mSteerMotorInputs.positionRadians));
 
