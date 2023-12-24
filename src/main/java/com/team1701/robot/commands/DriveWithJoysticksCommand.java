@@ -8,13 +8,14 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 
-public class JoystickDriveCommand extends Command {
+public class DriveWithJoysticksCommand extends Command {
     private final Drive mDrive;
     private final DoubleSupplier mThrottle;
     private final DoubleSupplier mStrafe;
     private final DoubleSupplier mRotation;
 
-    public JoystickDriveCommand(Drive drive, DoubleSupplier throttle, DoubleSupplier strafe, DoubleSupplier rotation) {
+    public DriveWithJoysticksCommand(
+            Drive drive, DoubleSupplier throttle, DoubleSupplier strafe, DoubleSupplier rotation) {
         mDrive = drive;
         mThrottle = throttle;
         mStrafe = strafe;
@@ -24,6 +25,8 @@ public class JoystickDriveCommand extends Command {
 
     @Override
     public void execute() {
+        mDrive.setKinematicLimits(Constants.Drive.kFastKinematicLimits);
+
         var throttle = mThrottle.getAsDouble();
         var strafe = mStrafe.getAsDouble();
         var rotation = MathUtil.applyDeadband(mRotation.getAsDouble(), Constants.Controls.kDriverDeadband);

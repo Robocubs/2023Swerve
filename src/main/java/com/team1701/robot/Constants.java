@@ -28,6 +28,8 @@ public final class Constants {
         protected static final double kMk4iSteerReduction = 7.0 / 150.0;
 
         public static final double kOdometryFrequency = 250.0;
+        public static final double kTrackWidthMeters;
+        public static final double kWheelbaseMeters;
         public static final double kWheelRadiusMeters;
         public static final double kMaxVelocityMetersPerSecond;
         public static final double kMaxAngularVelocityRadiansPerSecond;
@@ -51,14 +53,12 @@ public final class Constants {
 
         static {
             double driveMotorMaxRPM;
-            double driveTrackWidthMeters;
-            double driveWheelbaseMeters;
 
             switch (Configuration.getRobot()) {
                 case SWERVE_BOT:
                     kWheelRadiusMeters = Units.inchesToMeters(2);
-                    driveTrackWidthMeters = 0.465;
-                    driveWheelbaseMeters = 0.465;
+                    kTrackWidthMeters = 0.465;
+                    kWheelbaseMeters = 0.465;
                     driveMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
                     kDriveReduction = kL3DriveReduction;
                     kSteerReduction = kMk4iSteerReduction;
@@ -72,8 +72,8 @@ public final class Constants {
                     break;
                 case SIMULATION_BOT:
                     kWheelRadiusMeters = Units.inchesToMeters(2);
-                    driveTrackWidthMeters = 0.5;
-                    driveWheelbaseMeters = 0.5;
+                    kTrackWidthMeters = 0.5;
+                    kWheelbaseMeters = 0.5;
                     driveMotorMaxRPM = Constants.Motors.kMaxKrakenRPM;
                     kDriveReduction = kL3DriveReduction * k16ToothKitReduction;
                     kSteerReduction = kMk4iSteerReduction;
@@ -92,17 +92,17 @@ public final class Constants {
             kMaxVelocityMetersPerSecond =
                     driveMotorMaxRPM / 60.0 * (2 * Math.PI) * kDriveReduction * kWheelRadiusMeters;
             kMaxAngularVelocityRadiansPerSecond =
-                    kMaxVelocityMetersPerSecond / Math.hypot(driveTrackWidthMeters / 2.0, driveWheelbaseMeters / 2.0);
+                    kMaxVelocityMetersPerSecond / Math.hypot(kTrackWidthMeters / 2.0, kWheelbaseMeters / 2.0);
 
             kKinematics = new ExtendedSwerveDriveKinematics(
                     // Front left
-                    new Translation2d(driveTrackWidthMeters / 2.0, driveWheelbaseMeters / 2.0),
+                    new Translation2d(kTrackWidthMeters / 2.0, kWheelbaseMeters / 2.0),
                     // Front right
-                    new Translation2d(driveTrackWidthMeters / 2.0, -driveWheelbaseMeters / 2.0),
+                    new Translation2d(kTrackWidthMeters / 2.0, -kWheelbaseMeters / 2.0),
                     // Back left
-                    new Translation2d(-driveTrackWidthMeters / 2.0, driveWheelbaseMeters / 2.0),
+                    new Translation2d(-kTrackWidthMeters / 2.0, kWheelbaseMeters / 2.0),
                     // Back right
-                    new Translation2d(-driveTrackWidthMeters / 2.0, -driveWheelbaseMeters / 2.0));
+                    new Translation2d(-kTrackWidthMeters / 2.0, -kWheelbaseMeters / 2.0));
 
             kNumModules = kKinematics.getNumModules();
 

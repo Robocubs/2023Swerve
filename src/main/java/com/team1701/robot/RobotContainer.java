@@ -12,7 +12,7 @@ import com.team1701.lib.drivers.gyros.GyroIOPigeon2;
 import com.team1701.lib.drivers.gyros.GyroIOSim;
 import com.team1701.lib.drivers.motors.MotorIO;
 import com.team1701.robot.Configuration.Mode;
-import com.team1701.robot.commands.JoystickDriveCommand;
+import com.team1701.robot.commands.DriveWithJoysticksCommand;
 import com.team1701.robot.estimation.PoseEstimator;
 import com.team1701.robot.subsystems.drive.Drive;
 import com.team1701.robot.subsystems.drive.DriveMotorFactory;
@@ -91,7 +91,7 @@ public class RobotContainer {
     }
 
     private void setupControllerBindings() {
-        drive.setDefaultCommand(new JoystickDriveCommand(
+        drive.setDefaultCommand(new DriveWithJoysticksCommand(
                 drive,
                 () -> -mDriverController.getLeftY(),
                 () -> -mDriverController.getLeftX(),

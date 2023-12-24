@@ -53,7 +53,7 @@ public class SwerveModule {
             mAngleOffsetNotInitialized = false;
         }
 
-        mMeasuredAngle = toModuleAngle(new Rotation2d(mSteerMotorInputs.positionRadians));
+        mMeasuredAngle = toModuleAngle(Rotation2d.fromRadians(mSteerMotorInputs.positionRadians));
 
         var hashCode = hashCode();
         if (Constants.Drive.kDriveKf.hasChanged(hashCode)
@@ -82,7 +82,7 @@ public class SwerveModule {
         for (int i = 0; i < states.length; i++) {
             states[i] = new SwerveModulePosition(
                     mDriveMotorInputs.positionRadiansSamples[i] * Constants.Drive.kWheelRadiusMeters,
-                    toModuleAngle(new Rotation2d(mSteerMotorInputs.positionRadiansSamples[i])));
+                    toModuleAngle(Rotation2d.fromRadians(mSteerMotorInputs.positionRadiansSamples[i])));
         }
 
         return states;
@@ -112,7 +112,7 @@ public class SwerveModule {
     }
 
     public void zeroSteeringMotor() {
-        mAngleOffset = mSteerEncoderInputs.position.minus(new Rotation2d(mSteerMotorInputs.positionRadians));
+        mAngleOffset = mSteerEncoderInputs.position.minus(Rotation2d.fromRadians(mSteerMotorInputs.positionRadians));
         mMeasuredAngle = mSteerEncoderInputs.position;
     }
 

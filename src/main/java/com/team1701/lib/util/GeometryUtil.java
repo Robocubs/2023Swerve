@@ -24,6 +24,6 @@ public final class GeometryUtil {
     }
 
     public static Rotation2d angleModulus(Rotation2d rotation) {
-        return new Rotation2d(MathUtil.angleModulus(rotation.getRadians()));
+        return Rotation2d.fromRadians(MathUtil.angleModulus(rotation.getRadians()));
     }
 }

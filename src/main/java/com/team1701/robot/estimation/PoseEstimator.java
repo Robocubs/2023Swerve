@@ -23,7 +23,11 @@ public class PoseEstimator {
 
     public static PoseEstimator getInstance() {
         if (mInstance == null) {
-            mInstance = new PoseEstimator();
+            synchronized (PoseEstimator.class) {
+                if (mInstance == null) {
+                    mInstance = new PoseEstimator();
+                }
+            }
         }
 
         return mInstance;

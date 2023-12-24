@@ -108,7 +108,7 @@ public class MotorIOSim implements MotorIO {
     }
 
     public Rotation2d getPosition() {
-        return new Rotation2d(mPositionRadians);
+        return Rotation2d.fromRadians(mPositionRadians);
     }
 
     public double getVelocityRotationsPerSecond() {

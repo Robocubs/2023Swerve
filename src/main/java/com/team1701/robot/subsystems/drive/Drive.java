@@ -186,6 +186,10 @@ public class Drive extends SubsystemBase {
         Logger.recordOutput("Drive/DesiredStates", desiredSetpoint.moduleStates);
     }
 
+    public void setKinematicLimits(KinematicLimits kinematicLimits) {
+        mKinematicLimits = kinematicLimits;
+    }
+
     public void setVelocity(ChassisSpeeds chassisSpeeds) {
         mDesiredChassisSpeeds = chassisSpeeds;
     }
@@ -194,15 +198,19 @@ public class Drive extends SubsystemBase {
         return Constants.Drive.kKinematics.toChassisSpeeds(mMeasuredModuleStates);
     }
 
-    @AutoLogOutput()
-    public Rotation2d getFieldRelativeHeading() {
-        return mFieldRelativeHeading;
+    public ChassisSpeeds getFieldRelativeVelocity() {
+        return ChassisSpeeds.fromRobotRelativeSpeeds(getVelocity(), mFieldRelativeHeading);
     }
 
     @AutoLogOutput
     public double getSpeedMetersPerSecond() {
         var chassisSpeeds = Constants.Drive.kKinematics.toChassisSpeeds(mMeasuredModuleStates);
         return Math.hypot(chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond);
+    }
+
+    @AutoLogOutput()
+    public Rotation2d getFieldRelativeHeading() {
+        return mFieldRelativeHeading;
     }
 
     public void zeroGyroscope() {
