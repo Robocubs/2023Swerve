@@ -5,11 +5,7 @@
 package com.team1701.robot;
 
 import com.team1701.robot.Configuration.Mode;
-import com.team1701.robot.estimation.PoseEstimator;
-import com.team1701.robot.loops.LoopRunner;
-import com.team1701.robot.subsystems.drive.Drive;
-import com.team1701.robot.subsystems.vision.Vision;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -18,24 +14,13 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 public class Robot extends LoggedRobot {
-    private final LoopRunner mEnabledLooper = new LoopRunner("enabled");
-    private final LoopRunner mDisabledLooper = new LoopRunner("disabled");
-    private final ControllerManager mControllerManager = ControllerManager.getInstance();
-    private final SubsystemManager mSubsystemManager = SubsystemManager.getInstance();
-    private final Drive mDrive = Drive.getInstance();
-    private final Vision mVision = Vision.getInstance();
-    private final PoseEstimator mPoseEstimator = PoseEstimator.getInstance();
+    @SuppressWarnings("unused") // Needed for output logging
+    private RobotContainer mRobotContainer;
 
     @Override
     public void robotInit() {
         initializeAdvantageKit();
-
-        mSubsystemManager.setSubsystems(mDrive, mVision);
-        mSubsystemManager.registerEnabledLoops(mEnabledLooper);
-        mSubsystemManager.registerDisabledLoops(mDisabledLooper);
-        mSubsystemManager.outputTelemetry();
-
-        createJoystickHandlers();
+        mRobotContainer = new RobotContainer();
     }
 
     private void initializeAdvantageKit() {
@@ -79,70 +64,25 @@ public class Robot extends LoggedRobot {
         Logger.start();
     }
 
-    private void createJoystickHandlers() {
-        var driver = mControllerManager.getDriverJoystick();
-
-        driver.onButtonPressed(ControllerManager.kXBOXButtonX, () -> {
-            mDrive.zeroGyroscope();
-        });
-    }
-
     @Override
     public void robotPeriodic() {
-        mEnabledLooper.loop();
-        mDisabledLooper.loop();
-        mSubsystemManager.outputTelemetry();
-        mEnabledLooper.outputTelemetry();
-        mDisabledLooper.outputTelemetry();
-        mPoseEstimator.outputTelemetry();
+        CommandScheduler.getInstance().run();
     }
 
     @Override
-    public void autonomousInit() {
-        mDisabledLooper.stop();
-        mEnabledLooper.start();
-    }
+    public void autonomousInit() {}
 
     @Override
     public void autonomousPeriodic() {}
 
     @Override
-    public void teleopInit() {
-        mDrive.zeroModules();
-        mDisabledLooper.stop();
-        mControllerManager.resetHandlers();
-        mEnabledLooper.start();
-    }
+    public void teleopInit() {}
 
     @Override
-    public void teleopPeriodic() {
-        mControllerManager.invokeHandlers();
-        drive();
-    }
-
-    private void drive() {
-        var throttle = -mControllerManager.getDriverJoystick().getY();
-        var strafe = -mControllerManager.getDriverJoystick().getX();
-        var rot = -mControllerManager.getDriverJoystick().getZWithDeadZone();
-        var mag = Math.hypot(throttle, strafe);
-
-        if (mag < Constants.Controls.kDriverMagDeadZone) {
-            mDrive.setVelocity(new ChassisSpeeds(0, 0, rot * Constants.Drive.kMaxAngularVelocityRadiansPerSecond));
-        } else {
-            mDrive.setVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(
-                    throttle * Constants.Drive.kMaxVelocityMetersPerSecond,
-                    strafe * Constants.Drive.kMaxVelocityMetersPerSecond,
-                    rot * Constants.Drive.kMaxAngularVelocityRadiansPerSecond,
-                    mDrive.getFieldRelativeRotation()));
-        }
-    }
+    public void teleopPeriodic() {}
 
     @Override
-    public void disabledInit() {
-
-        mEnabledLooper.stop();
-        mDisabledLooper.start();
-    }
+    public void disabledInit() {}
 
     @Override
     public void disabledPeriodic() {}

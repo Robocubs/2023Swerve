@@ -1,5 +1,6 @@
 package com.team1701.lib.util;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -20,5 +21,9 @@ public final class GeometryUtil {
 
     public static Rotation2d flipX(Rotation2d rotation) {
         return rotation.getRadians() < 0 ? kRotationMinusPi.minus(rotation) : kRotationPi.minus(rotation);
+    }
+
+    public static Rotation2d angleModulus(Rotation2d rotation) {
+        return new Rotation2d(MathUtil.angleModulus(rotation.getRadians()));
     }
 }

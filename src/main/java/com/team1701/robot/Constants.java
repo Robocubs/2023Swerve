@@ -11,27 +11,29 @@ public final class Constants {
     public static final double kLoopPeriodSeconds = 0.02;
 
     public static final class Controls {
-        public static final double kDriverMagDeadZone = 0.09;
-        public static final double kDriverXDeadZone = 0.09;
-        public static final double kDriverYDeadZone = 0.09;
+        public static final double kDriverDeadband = 0.09;
     }
 
     public static final class Motors {
         public static final double kMaxNeoRPM = 5676;
+        public static final double kMaxKrakenRPM = 6000;
     }
 
     public static final class Drive {
         protected static final double kL1DriveReduction = (14.0 / 50.0) * (25.0 / 19.0) * (15.0 / 45.0);
         protected static final double kL2DriveReduction = (14.0 / 50.0) * (27.0 / 17.0) * (15.0 / 45.0);
         protected static final double kL3DriveReduction = (14.0 / 50.0) * (28.0 / 16.0) * (15.0 / 45.0);
-
+        protected static final double k16ToothKitReduction = (16.0 / 14.0);
         protected static final double kMk4SteerReduction = 1.0 / 12.8;
         protected static final double kMk4iSteerReduction = 7.0 / 150.0;
 
+        public static final double kOdometryFrequency = 250.0;
         public static final double kWheelRadiusMeters;
         public static final double kMaxVelocityMetersPerSecond;
         public static final double kMaxAngularVelocityRadiansPerSecond;
-        public static final boolean kMotorsInverted;
+        public static final double kMinLockVelocityMetersPerSecond = 0.2;
+        public static final boolean kDriveMotorsInverted;
+        public static final boolean kSteerMotorsInverted;
         public static final double kDriveReduction;
         public static final double kSteerReduction;
 
@@ -60,7 +62,8 @@ public final class Constants {
                     driveMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
                     kDriveReduction = kL3DriveReduction;
                     kSteerReduction = kMk4iSteerReduction;
-                    kMotorsInverted = true;
+                    kDriveMotorsInverted = true;
+                    kSteerMotorsInverted = true;
                     kDriveKf.initDefault(0.0002);
                     kDriveKp.initDefault(0.00003);
                     kDriveKd.initDefault(0);
@@ -71,14 +74,15 @@ public final class Constants {
                     kWheelRadiusMeters = Units.inchesToMeters(2);
                     driveTrackWidthMeters = 0.5;
                     driveWheelbaseMeters = 0.5;
-                    driveMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
-                    kDriveReduction = kL3DriveReduction;
+                    driveMotorMaxRPM = Constants.Motors.kMaxKrakenRPM;
+                    kDriveReduction = kL3DriveReduction * k16ToothKitReduction;
                     kSteerReduction = kMk4iSteerReduction;
-                    kMotorsInverted = true;
-                    kDriveKf.initDefault(0.12);
-                    kDriveKp.initDefault(1.8);
+                    kDriveMotorsInverted = true;
+                    kSteerMotorsInverted = true;
+                    kDriveKf.initDefault(0.1);
+                    kDriveKp.initDefault(0.6);
                     kDriveKd.initDefault(0);
-                    kSteerKp.initDefault(23.0);
+                    kSteerKp.initDefault(16.0);
                     kSteerKd.initDefault(0);
                     break;
                 default:
@@ -113,23 +117,24 @@ public final class Constants {
         }
     }
 
-    public static final String kFrontLeftCameraName = "Camerafl";
-    public static final Transform3d kRobotToFrontLeftCamPose =
-            new Transform3d(new Translation3d(0.19, -0.30, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(0)));
+    public static final class Vision {
+        public static final String kFrontLeftCameraName = "CameraFL";
+        public static final Transform3d kRobotToFrontLeftCamPose =
+                new Transform3d(new Translation3d(0.3, -0.3, 0.2), new Rotation3d(0, 0, Units.degreesToRadians(45)));
 
-    public static final String kFrontRightCameraName = "Camerafr";
-    public static final Transform3d kRobotToFrontRightCamPose =
-            new Transform3d(new Translation3d(0.19, -0.30, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(0)));
+        public static final String kFrontRightCameraName = "CameraFR";
+        public static final Transform3d kRobotToFrontRightCamPose =
+                new Transform3d(new Translation3d(0.3, 0.3, 0.2), new Rotation3d(0, 0, Units.degreesToRadians(-45)));
 
-    public static final String kBackLeftCameraName = "Camerabl";
-    public static final Transform3d kRobotToBackLeftCamPose =
-            new Transform3d(new Translation3d(-0.195, 0.305, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(180.5)));
+        public static final String kBackLeftCameraName = "CameraBL";
+        public static final Transform3d kRobotToBackLeftCamPose =
+                new Transform3d(new Translation3d(-0.3, -0.3, 0.2), new Rotation3d(0, 0, Units.degreesToRadians(135)));
 
-    public static final String kBackRightCameraName = "Camerabr";
-    public static final Transform3d kRobotToBackRightCamPose =
-            new Transform3d(new Translation3d(-0.195, 0.305, 0.5), new Rotation3d(0, 0, Units.degreesToRadians(180.5)));
+        public static final String kBackRightCameraName = "CameraBR";
+        public static final Transform3d kRobotToBackRightCamPose =
+                new Transform3d(new Translation3d(-0.3, 0.3, 0.2), new Rotation3d(0, 0, Units.degreesToRadians(-135)));
 
-    public static final double kCameraMaxPoseAmbiguity = 0.03;
-    public static final double kCameraZoomMultiplier = 0.9531350826;
-    public static final PoseStrategy kCameraPoseStrategy = PoseStrategy.AVERAGE_BEST_TARGETS;
+        public static final double kMaxPoseAmbiguity = 0.03;
+        public static final PoseStrategy kPoseStrategy = PoseStrategy.AVERAGE_BEST_TARGETS;
+    }
 }

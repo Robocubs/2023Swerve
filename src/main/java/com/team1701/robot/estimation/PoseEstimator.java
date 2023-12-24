@@ -9,7 +9,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.AutoLogOutput;
 
 public class PoseEstimator {
     private static PoseEstimator mInstance = null;
@@ -31,14 +31,26 @@ public class PoseEstimator {
 
     private PoseEstimator() {}
 
-    public Pose2d get() {
+    @AutoLogOutput()
+    public Pose2d getPose2d() {
         return mPoseEstimator.getEstimatedPosition();
+    }
+
+    @AutoLogOutput()
+    public Pose3d getPose3d() {
+        return new Pose3d(mPoseEstimator.getEstimatedPosition());
     }
 
     public void update(Rotation2d gyroAngle, SwerveModulePosition[] modulePositions) {
         mGyroAngle = gyroAngle;
         mModulePositions = modulePositions;
         mPoseEstimator.update(gyroAngle, modulePositions);
+    }
+
+    public void updateWithTime(double timeSeconds, Rotation2d gyroAngle, SwerveModulePosition[] modulePositions) {
+        mGyroAngle = gyroAngle;
+        mModulePositions = modulePositions;
+        mPoseEstimator.updateWithTime(timeSeconds, gyroAngle, modulePositions);
     }
 
     public void setPose(Pose2d pose) {
@@ -53,13 +65,5 @@ public class PoseEstimator {
         mGyroAngle = gyroAngle;
         mModulePositions = modulePositions;
         mPoseEstimator.resetPosition(gyroAngle, modulePositions, pose);
-    }
-
-    public void outputTelemetry() {
-        Logger.recordOutput("PoseEstimator/Pose", mPoseEstimator.getEstimatedPosition());
-    }
-
-    public Pose3d getCurrentPose() {
-        return null;
     }
 }

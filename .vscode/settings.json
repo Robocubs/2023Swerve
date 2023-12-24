@@ -49,7 +49,9 @@
   },
   "cSpell.words": [
     "Brushless",
+    "Deadband",
     "dtheta",
+    "Odometry",
     "Setpoint",
     "Setpoints",
     "teleop",
