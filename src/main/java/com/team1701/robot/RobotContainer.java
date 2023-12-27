@@ -12,23 +12,24 @@ import com.team1701.lib.drivers.gyros.GyroIOPigeon2;
 import com.team1701.lib.drivers.gyros.GyroIOSim;
 import com.team1701.lib.drivers.motors.MotorIO;
 import com.team1701.robot.Configuration.Mode;
-import com.team1701.robot.commands.DriveWithJoysticksCommand;
+import com.team1701.robot.commands.AutonomousCommands;
+import com.team1701.robot.commands.DriveWithJoysticks;
 import com.team1701.robot.estimation.PoseEstimator;
 import com.team1701.robot.subsystems.drive.Drive;
 import com.team1701.robot.subsystems.drive.DriveMotorFactory;
 import com.team1701.robot.subsystems.drive.SwerveModuleIO;
 import com.team1701.robot.subsystems.vision.Vision;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
-    // Subsystems
-    public final Drive drive;
-    public final Vision vision;
-
-    // Controllers
+    protected final Drive drive;
+    protected final Vision vision;
     private final CommandXboxController mDriverController = new CommandXboxController(0);
+    private final LoggedDashboardChooser<Command> autonomousModeChooser = new LoggedDashboardChooser<>("Auto Mode");
 
     public RobotContainer() {
         Optional<Drive> drive = Optional.empty();
@@ -88,14 +89,27 @@ public class RobotContainer {
                 new PhotonCameraIO() {}, new PhotonCameraIO() {}, new PhotonCameraIO() {}, new PhotonCameraIO() {}));
 
         setupControllerBindings();
+        setupAutonomousChoices();
     }
 
     private void setupControllerBindings() {
-        drive.setDefaultCommand(new DriveWithJoysticksCommand(
+        drive.setDefaultCommand(new DriveWithJoysticks(
                 drive,
                 () -> -mDriverController.getLeftY(),
                 () -> -mDriverController.getLeftX(),
-                () -> -mDriverController.getRightX()));
+                () -> -mDriverController.getRightX(),
+                () -> mDriverController.leftBumper().getAsBoolean()
+                        ? Constants.Drive.kSlowKinematicLimits
+                        : Constants.Drive.kFastKinematicLimits));
         mDriverController.x().onTrue(Commands.runOnce(() -> drive.zeroGyroscope()));
+    }
+
+    public void setupAutonomousChoices() {
+        var commands = new AutonomousCommands(drive);
+        autonomousModeChooser.addDefaultOption("Demo", commands.demo());
+    }
+
+    public Optional<Command> getAutonomousCommand() {
+        return Optional.ofNullable(autonomousModeChooser.get());
     }
 }

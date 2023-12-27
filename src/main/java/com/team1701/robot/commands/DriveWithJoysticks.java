@@ -1,31 +1,40 @@
 package com.team1701.robot.commands;
 
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
+import com.team1701.lib.swerve.SwerveSetpointGenerator.KinematicLimits;
 import com.team1701.robot.Constants;
 import com.team1701.robot.subsystems.drive.Drive;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 
-public class DriveWithJoysticksCommand extends Command {
+public class DriveWithJoysticks extends Command {
     private final Drive mDrive;
     private final DoubleSupplier mThrottle;
     private final DoubleSupplier mStrafe;
     private final DoubleSupplier mRotation;
+    private final Supplier<KinematicLimits> mKinematicLimits;
 
-    public DriveWithJoysticksCommand(
-            Drive drive, DoubleSupplier throttle, DoubleSupplier strafe, DoubleSupplier rotation) {
+    public DriveWithJoysticks(
+            Drive drive,
+            DoubleSupplier throttle,
+            DoubleSupplier strafe,
+            DoubleSupplier rotation,
+            Supplier<KinematicLimits> kinematicLimits) {
         mDrive = drive;
         mThrottle = throttle;
         mStrafe = strafe;
         mRotation = rotation;
+        mKinematicLimits = kinematicLimits;
         addRequirements(drive);
     }
 
     @Override
     public void execute() {
-        mDrive.setKinematicLimits(Constants.Drive.kFastKinematicLimits);
+        var kinematicLimits = mKinematicLimits.get();
+        mDrive.setKinematicLimits(kinematicLimits);
 
         var throttle = mThrottle.getAsDouble();
         var strafe = mStrafe.getAsDouble();
@@ -37,10 +46,15 @@ public class DriveWithJoysticksCommand extends Command {
                     new ChassisSpeeds(0.0, 0.0, rotation * Constants.Drive.kMaxAngularVelocityRadiansPerSecond));
         } else {
             mDrive.setVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(
-                    throttle * Constants.Drive.kMaxVelocityMetersPerSecond,
-                    strafe * Constants.Drive.kMaxVelocityMetersPerSecond,
-                    rotation * Constants.Drive.kMaxAngularVelocityRadiansPerSecond,
+                    throttle * kinematicLimits.kMaxDriveVelocity,
+                    strafe * kinematicLimits.kMaxDriveVelocity,
+                    rotation * kinematicLimits.kMaxDriveVelocity / Constants.Drive.kModuleRadius,
                     mDrive.getFieldRelativeHeading()));
         }
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        mDrive.stop();
     }
 }

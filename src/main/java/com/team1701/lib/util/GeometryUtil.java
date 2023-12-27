@@ -26,4 +26,11 @@ public final class GeometryUtil {
     public static Rotation2d angleModulus(Rotation2d rotation) {
         return Rotation2d.fromRadians(MathUtil.angleModulus(rotation.getRadians()));
     }
+
+    public static boolean isNear(Rotation2d expected, Rotation2d actual, Rotation2d tolerance) {
+        return MathUtil.isNear(
+                MathUtil.angleModulus(expected.getRadians()),
+                MathUtil.angleModulus(actual.getRadians()),
+                tolerance.getRadians());
+    }
 }

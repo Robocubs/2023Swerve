@@ -30,6 +30,7 @@ public final class Constants {
         public static final double kOdometryFrequency = 250.0;
         public static final double kTrackWidthMeters;
         public static final double kWheelbaseMeters;
+        public static final double kModuleRadius;
         public static final double kWheelRadiusMeters;
         public static final double kMaxVelocityMetersPerSecond;
         public static final double kMaxAngularVelocityRadiansPerSecond;
@@ -44,6 +45,8 @@ public final class Constants {
         public static final KinematicLimits kUncappedKinematicLimits;
         public static final KinematicLimits kFastKinematicLimits;
         public static final KinematicLimits kSlowKinematicLimits;
+        public static final KinematicLimits kFastTrapezoidalKinematicLimits;
+        public static final KinematicLimits kSlowTrapezoidalKinematicLimits;
 
         public static final LoggedTunableNumber kDriveKf = new LoggedTunableNumber("Drive/Module/DriveKf");
         public static final LoggedTunableNumber kDriveKp = new LoggedTunableNumber("Drive/Module/DriveKp");
@@ -89,6 +92,7 @@ public final class Constants {
                     throw new UnsupportedOperationException("No drive configuration for " + Configuration.getRobot());
             }
 
+            kModuleRadius = Math.hypot(kTrackWidthMeters / 2.0, kWheelbaseMeters / 2.0);
             kMaxVelocityMetersPerSecond =
                     driveMotorMaxRPM / 60.0 * (2 * Math.PI) * kDriveReduction * kWheelRadiusMeters;
             kMaxAngularVelocityRadiansPerSecond =
@@ -114,6 +118,14 @@ public final class Constants {
                     kMaxVelocityMetersPerSecond * 0.5,
                     kMaxVelocityMetersPerSecond * 0.5 / 0.2,
                     Units.degreesToRadians(750.0));
+            kFastTrapezoidalKinematicLimits = new KinematicLimits(
+                    kMaxVelocityMetersPerSecond * 0.8,
+                    kMaxVelocityMetersPerSecond * 0.8 / 1.5,
+                    kFastKinematicLimits.kMaxSteeringVelocity);
+            kSlowTrapezoidalKinematicLimits = new KinematicLimits(
+                    kMaxVelocityMetersPerSecond * 0.4,
+                    kMaxVelocityMetersPerSecond * 0.4 / 2.0,
+                    kFastKinematicLimits.kMaxSteeringVelocity);
         }
     }
 

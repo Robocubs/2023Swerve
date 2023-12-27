@@ -119,7 +119,7 @@ public class Drive extends SubsystemBase {
 
         var timestamp = Timer.getFPGATimestamp();
         for (var state : mMeasuredModuleStates) {
-            mWasMovingRecently.update(!Util.epsilonEquals(state.speedMetersPerSecond, 0.0, 0.02), timestamp);
+            mWasMovingRecently.update(!Util.inRange(state.speedMetersPerSecond, 0.02), timestamp);
         }
     }
 

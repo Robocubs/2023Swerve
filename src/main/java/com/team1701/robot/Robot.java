@@ -4,7 +4,10 @@
 
 package com.team1701.robot;
 
+import java.util.Optional;
+
 import com.team1701.robot.Configuration.Mode;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
@@ -14,8 +17,8 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 public class Robot extends LoggedRobot {
-    @SuppressWarnings("unused") // Needed for output logging
     private RobotContainer mRobotContainer;
+    private Optional<Command> mAutonomousCommand = Optional.empty();
 
     @Override
     public void robotInit() {
@@ -70,7 +73,11 @@ public class Robot extends LoggedRobot {
     }
 
     @Override
-    public void autonomousInit() {}
+    public void autonomousInit() {
+        CommandScheduler.getInstance().cancelAll();
+        mAutonomousCommand = mRobotContainer.getAutonomousCommand();
+        mAutonomousCommand.ifPresent(command -> CommandScheduler.getInstance().schedule(command));
+    }
 
     @Override
     public void autonomousPeriodic() {}
@@ -82,7 +89,9 @@ public class Robot extends LoggedRobot {
     public void teleopPeriodic() {}
 
     @Override
-    public void disabledInit() {}
+    public void disabledInit() {
+        mAutonomousCommand.ifPresent(Command::cancel);
+    }
 
     @Override
     public void disabledPeriodic() {}
