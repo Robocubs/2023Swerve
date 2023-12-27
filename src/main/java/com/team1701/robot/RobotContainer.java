@@ -3,6 +3,7 @@ package com.team1701.robot;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import com.pathplanner.lib.auto.AutoBuilder;
 import com.team1701.lib.cameras.PhotonCameraIO;
 import com.team1701.lib.cameras.PhotonCameraIOPhotonCamera;
 import com.team1701.lib.drivers.encoders.EncoderIO;
@@ -26,8 +27,9 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
-    protected final Drive drive;
-    protected final Vision vision;
+    protected final Drive mDrive;
+    protected final Vision mVision;
+
     private final CommandXboxController mDriverController = new CommandXboxController(0);
     private final LoggedDashboardChooser<Command> autonomousModeChooser = new LoggedDashboardChooser<>("Auto Mode");
 
@@ -65,7 +67,8 @@ public class RobotContainer {
                             Stream.generate(() -> SwerveModuleIO.createSim(DCMotor.getKrakenX60(1), DCMotor.getNEO(1)))
                                     .limit(Constants.Drive.kNumModules)
                                     .toArray(SwerveModuleIO[]::new));
-                    gyroIO.setYawSupplier(() -> simDrive.getVelocity(), Constants.kLoopPeriodSeconds);
+                    gyroIO.setYawSupplier(
+                            () -> simDrive.getVelocity().omegaRadiansPerSecond, Constants.kLoopPeriodSeconds);
                     drive = Optional.of(simDrive);
                     break;
                 default:
@@ -79,33 +82,42 @@ public class RobotContainer {
                     new PhotonCameraIOPhotonCamera(Constants.Vision.kBackRightCameraName)));
         }
 
-        this.drive = drive.orElseGet(() -> Drive.build(
+        this.mDrive = drive.orElseGet(() -> Drive.build(
                 new GyroIO() {},
                 Stream.generate(() -> new SwerveModuleIO(new MotorIO() {}, new MotorIO() {}, new EncoderIO() {}))
                         .limit(Constants.Drive.kNumModules)
                         .toArray(SwerveModuleIO[]::new)));
 
-        this.vision = vision.orElseGet(() -> Vision.build(
+        this.mVision = vision.orElseGet(() -> Vision.build(
                 new PhotonCameraIO() {}, new PhotonCameraIO() {}, new PhotonCameraIO() {}, new PhotonCameraIO() {}));
 
         setupControllerBindings();
-        setupAutonomousChoices();
+        setupAutonomous();
     }
 
     private void setupControllerBindings() {
-        drive.setDefaultCommand(new DriveWithJoysticks(
-                drive,
+        mDrive.setDefaultCommand(new DriveWithJoysticks(
+                mDrive,
                 () -> -mDriverController.getLeftY(),
                 () -> -mDriverController.getLeftX(),
                 () -> -mDriverController.getRightX(),
                 () -> mDriverController.leftBumper().getAsBoolean()
                         ? Constants.Drive.kSlowKinematicLimits
                         : Constants.Drive.kFastKinematicLimits));
-        mDriverController.x().onTrue(Commands.runOnce(() -> drive.zeroGyroscope()));
+        mDriverController.x().onTrue(Commands.runOnce(() -> mDrive.zeroGyroscope()));
     }
 
-    public void setupAutonomousChoices() {
-        var commands = new AutonomousCommands(drive);
+    private void setupAutonomous() {
+        var poseEstimator = PoseEstimator.getInstance();
+        AutoBuilder.configureHolonomic(
+                poseEstimator::getPose2d,
+                poseEstimator::setPose,
+                mDrive::getVelocity,
+                mDrive::setVelocity,
+                Constants.Drive.kPathFollowerConfig,
+                mDrive);
+
+        var commands = new AutonomousCommands(mDrive);
         autonomousModeChooser.addDefaultOption("Demo", commands.demo());
     }
 

@@ -1,5 +1,8 @@
 package com.team1701.robot;
 
+import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.util.ReplanningConfig;
 import com.team1701.lib.swerve.ExtendedSwerveDriveKinematics;
 import com.team1701.lib.swerve.SwerveSetpointGenerator.KinematicLimits;
 import com.team1701.lib.util.LoggedTunableNumber;
@@ -53,6 +56,8 @@ public final class Constants {
         public static final LoggedTunableNumber kDriveKd = new LoggedTunableNumber("Drive/Module/DriveKd");
         public static final LoggedTunableNumber kSteerKp = new LoggedTunableNumber("Drive/Module/SteerKp");
         public static final LoggedTunableNumber kSteerKd = new LoggedTunableNumber("Drive/Module/SteerKd");
+
+        public static final HolonomicPathFollowerConfig kPathFollowerConfig;
 
         static {
             double driveMotorMaxRPM;
@@ -126,6 +131,14 @@ public final class Constants {
                     kMaxVelocityMetersPerSecond * 0.4,
                     kMaxVelocityMetersPerSecond * 0.4 / 2.0,
                     kFastKinematicLimits.kMaxSteeringVelocity);
+
+            kPathFollowerConfig = new HolonomicPathFollowerConfig(
+                    new PIDConstants(4.0, 0.0, 0.0),
+                    new PIDConstants(2.0, 0.0, 0.0),
+                    kMaxVelocityMetersPerSecond * 0.95,
+                    kModuleRadius,
+                    new ReplanningConfig(),
+                    kLoopPeriodSeconds);
         }
     }
 

@@ -51,6 +51,7 @@
     "Brushless",
     "Deadband",
     "dtheta",
+    "Holonomic",
     "Odometry",
     "Setpoint",
     "Setpoints",

@@ -14,6 +14,7 @@ public final class GeometryUtil {
     public static final Rotation2d kRotationPi = new Rotation2d(Math.PI);
     public static final Rotation2d kRotationMinusPi = new Rotation2d(-Math.PI);
     public static final Rotation2d kRotationHalfPi = new Rotation2d(Math.PI / 2.0);
+    public static final Rotation2d kRotationMinusHalfPi = new Rotation2d(-Math.PI / 2.0);
     public static final Twist2d kTwistIdentity = new Twist2d();
     public static final Transform3d kTransform3dIdentity = new Transform3d();
     public static final Translation3d kTranslation3dIdentity = new Translation3d();

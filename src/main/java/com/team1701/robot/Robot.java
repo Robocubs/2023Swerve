@@ -83,21 +83,23 @@ public class Robot extends LoggedRobot {
     public void autonomousPeriodic() {}
 
     @Override
-    public void teleopInit() {}
+    public void teleopInit() {
+        mAutonomousCommand.ifPresent(Command::cancel);
+    }
 
     @Override
     public void teleopPeriodic() {}
 
     @Override
-    public void disabledInit() {
-        mAutonomousCommand.ifPresent(Command::cancel);
-    }
+    public void disabledInit() {}
 
     @Override
     public void disabledPeriodic() {}
 
     @Override
-    public void testInit() {}
+    public void testInit() {
+        CommandScheduler.getInstance().cancelAll();
+    }
 
     @Override
     public void testPeriodic() {}

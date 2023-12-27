@@ -85,8 +85,8 @@ public class DriveToPose extends Command {
         mRotationState = new TrapezoidProfile.State(
                 MathUtil.inputModulus(
                         currentPose.getRotation().getRadians(),
-                        rotationToTarget.getRadians() - Math.PI,
-                        rotationToTarget.getRadians() + Math.PI),
+                        mTargetPose.getRotation().getRadians() - Math.PI,
+                        mTargetPose.getRotation().getRadians() + Math.PI),
                 fieldRelativeChassisSpeeds.omegaRadiansPerSecond);
     }
 
