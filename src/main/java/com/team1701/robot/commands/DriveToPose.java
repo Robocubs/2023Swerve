@@ -52,7 +52,7 @@ public class DriveToPose extends Command {
     private TrapezoidProfile.State mPositionState = new TrapezoidProfile.State();
     private TrapezoidProfile.State mRotationState = new TrapezoidProfile.State();
 
-    public DriveToPose(Drive drive, Pose2d pose, KinematicLimits kinematicLimits) {
+    DriveToPose(Drive drive, Pose2d pose, KinematicLimits kinematicLimits) {
         mDrive = drive;
         mTargetPose = pose;
         mKinematicLimits = kinematicLimits;

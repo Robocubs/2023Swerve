@@ -39,7 +39,7 @@ public class AutonomousCommands {
     }
 
     private Command driveToPose(Pose2d pose, KinematicLimits kinematicLimits, boolean finishAtPose) {
-        var driveToPose = new DriveToPose(mDrive, pose, kinematicLimits);
+        var driveToPose = DriveCommands.driveToPose(mDrive, pose, kinematicLimits);
         return finishAtPose ? driveToPose.until(driveToPose::atTargetPose) : driveToPose;
     }
 

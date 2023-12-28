@@ -14,7 +14,7 @@ import com.team1701.lib.drivers.gyros.GyroIOSim;
 import com.team1701.lib.drivers.motors.MotorIO;
 import com.team1701.robot.Configuration.Mode;
 import com.team1701.robot.commands.AutonomousCommands;
-import com.team1701.robot.commands.DriveWithJoysticks;
+import com.team1701.robot.commands.DriveCommands;
 import com.team1701.robot.estimation.PoseEstimator;
 import com.team1701.robot.subsystems.drive.Drive;
 import com.team1701.robot.subsystems.drive.DriveMotorFactory;
@@ -96,7 +96,7 @@ public class RobotContainer {
     }
 
     private void setupControllerBindings() {
-        mDrive.setDefaultCommand(new DriveWithJoysticks(
+        mDrive.setDefaultCommand(DriveCommands.driveWithJoysticks(
                 mDrive,
                 () -> -mDriverController.getLeftY(),
                 () -> -mDriverController.getLeftX(),
@@ -105,6 +105,7 @@ public class RobotContainer {
                         ? Constants.Drive.kSlowKinematicLimits
                         : Constants.Drive.kFastKinematicLimits));
         mDriverController.x().onTrue(Commands.runOnce(() -> mDrive.zeroGyroscope()));
+        mDriverController.leftTrigger().whileTrue(DriveCommands.swerveLock(mDrive));
     }
 
     private void setupAutonomous() {

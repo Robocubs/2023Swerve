@@ -68,6 +68,10 @@ public class SwerveModule {
         }
     }
 
+    public Rotation2d getAngle() {
+        return mMeasuredAngle;
+    }
+
     public SwerveModulePosition getPosition() {
         return new SwerveModulePosition(
                 mDriveMotorInputs.positionRadians * Constants.Drive.kWheelRadiusMeters, mMeasuredAngle);

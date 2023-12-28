@@ -37,6 +37,7 @@ public final class Constants {
         public static final double kWheelRadiusMeters;
         public static final double kMaxVelocityMetersPerSecond;
         public static final double kMaxAngularVelocityRadiansPerSecond;
+        public static final double kMaxSteerVelocityRadiansPerSecond;
         public static final double kMinLockVelocityMetersPerSecond = 0.2;
         public static final boolean kDriveMotorsInverted;
         public static final boolean kSteerMotorsInverted;
@@ -61,6 +62,7 @@ public final class Constants {
 
         static {
             double driveMotorMaxRPM;
+            double turnMotorMaxRPM;
 
             switch (Configuration.getRobot()) {
                 case SWERVE_BOT:
@@ -68,6 +70,7 @@ public final class Constants {
                     kTrackWidthMeters = 0.465;
                     kWheelbaseMeters = 0.465;
                     driveMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
+                    turnMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
                     kDriveReduction = kL3DriveReduction;
                     kSteerReduction = kMk4iSteerReduction;
                     kDriveMotorsInverted = true;
@@ -83,6 +86,7 @@ public final class Constants {
                     kTrackWidthMeters = 0.5;
                     kWheelbaseMeters = 0.5;
                     driveMotorMaxRPM = Constants.Motors.kMaxKrakenRPM;
+                    turnMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
                     kDriveReduction = kL3DriveReduction * k16ToothKitReduction;
                     kSteerReduction = kMk4iSteerReduction;
                     kDriveMotorsInverted = true;
@@ -99,9 +103,11 @@ public final class Constants {
 
             kModuleRadius = Math.hypot(kTrackWidthMeters / 2.0, kWheelbaseMeters / 2.0);
             kMaxVelocityMetersPerSecond =
-                    driveMotorMaxRPM / 60.0 * (2 * Math.PI) * kDriveReduction * kWheelRadiusMeters;
+                    Units.rotationsPerMinuteToRadiansPerSecond(driveMotorMaxRPM) * kDriveReduction * kWheelRadiusMeters;
             kMaxAngularVelocityRadiansPerSecond =
                     kMaxVelocityMetersPerSecond / Math.hypot(kTrackWidthMeters / 2.0, kWheelbaseMeters / 2.0);
+            kMaxSteerVelocityRadiansPerSecond =
+                    Units.rotationsPerMinuteToRadiansPerSecond(turnMotorMaxRPM) * kSteerReduction;
 
             kKinematics = new ExtendedSwerveDriveKinematics(
                     // Front left

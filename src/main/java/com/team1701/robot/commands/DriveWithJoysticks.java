@@ -17,7 +17,7 @@ public class DriveWithJoysticks extends Command {
     private final DoubleSupplier mRotation;
     private final Supplier<KinematicLimits> mKinematicLimits;
 
-    public DriveWithJoysticks(
+    DriveWithJoysticks(
             Drive drive,
             DoubleSupplier throttle,
             DoubleSupplier strafe,
@@ -38,17 +38,20 @@ public class DriveWithJoysticks extends Command {
 
         var throttle = mThrottle.getAsDouble();
         var strafe = mStrafe.getAsDouble();
-        var rotation = MathUtil.applyDeadband(mRotation.getAsDouble(), Constants.Controls.kDriverDeadband);
         var magnitude = Math.hypot(throttle, strafe);
+        var rotation = MathUtil.applyDeadband(mRotation.getAsDouble(), Constants.Controls.kDriverDeadband);
+
+        var rotationRadiansPerSecond = Math.copySign(rotation * rotation, rotation)
+                * kinematicLimits.kMaxDriveVelocity
+                / Constants.Drive.kModuleRadius;
 
         if (magnitude < Constants.Controls.kDriverDeadband) {
-            mDrive.setVelocity(
-                    new ChassisSpeeds(0.0, 0.0, rotation * Constants.Drive.kMaxAngularVelocityRadiansPerSecond));
+            mDrive.setVelocity(new ChassisSpeeds(0.0, 0.0, rotationRadiansPerSecond));
         } else {
             mDrive.setVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(
                     throttle * kinematicLimits.kMaxDriveVelocity,
                     strafe * kinematicLimits.kMaxDriveVelocity,
-                    rotation * kinematicLimits.kMaxDriveVelocity / Constants.Drive.kModuleRadius,
+                    rotationRadiansPerSecond,
                     mDrive.getFieldRelativeHeading()));
         }
     }
