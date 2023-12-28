@@ -2,6 +2,7 @@ package com.team1701.robot;
 
 import com.team1701.lib.util.LoggedTunableNumber;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 
 public final class Configuration {
     private static final RobotType kRobot = RobotType.SIMULATION_BOT;
@@ -29,6 +30,10 @@ public final class Configuration {
             default:
                 return Mode.REAL;
         }
+    }
+
+    public static Alliance getAlliance() {
+        return DriverStation.getAlliance().orElse(Alliance.Blue);
     }
 
     public static enum RobotType {

@@ -1,5 +1,8 @@
 package com.team1701.robot;
 
+import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.util.ReplanningConfig;
 import com.team1701.lib.swerve.ExtendedSwerveDriveKinematics;
 import com.team1701.lib.swerve.SwerveSetpointGenerator.KinematicLimits;
 import com.team1701.lib.util.LoggedTunableNumber;
@@ -28,9 +31,13 @@ public final class Constants {
         protected static final double kMk4iSteerReduction = 7.0 / 150.0;
 
         public static final double kOdometryFrequency = 250.0;
+        public static final double kTrackWidthMeters;
+        public static final double kWheelbaseMeters;
+        public static final double kModuleRadius;
         public static final double kWheelRadiusMeters;
         public static final double kMaxVelocityMetersPerSecond;
         public static final double kMaxAngularVelocityRadiansPerSecond;
+        public static final double kMaxSteerVelocityRadiansPerSecond;
         public static final double kMinLockVelocityMetersPerSecond = 0.2;
         public static final boolean kDriveMotorsInverted;
         public static final boolean kSteerMotorsInverted;
@@ -42,6 +49,8 @@ public final class Constants {
         public static final KinematicLimits kUncappedKinematicLimits;
         public static final KinematicLimits kFastKinematicLimits;
         public static final KinematicLimits kSlowKinematicLimits;
+        public static final KinematicLimits kFastTrapezoidalKinematicLimits;
+        public static final KinematicLimits kSlowTrapezoidalKinematicLimits;
 
         public static final LoggedTunableNumber kDriveKf = new LoggedTunableNumber("Drive/Module/DriveKf");
         public static final LoggedTunableNumber kDriveKp = new LoggedTunableNumber("Drive/Module/DriveKp");
@@ -49,17 +58,19 @@ public final class Constants {
         public static final LoggedTunableNumber kSteerKp = new LoggedTunableNumber("Drive/Module/SteerKp");
         public static final LoggedTunableNumber kSteerKd = new LoggedTunableNumber("Drive/Module/SteerKd");
 
+        public static final HolonomicPathFollowerConfig kPathFollowerConfig;
+
         static {
             double driveMotorMaxRPM;
-            double driveTrackWidthMeters;
-            double driveWheelbaseMeters;
+            double turnMotorMaxRPM;
 
             switch (Configuration.getRobot()) {
                 case SWERVE_BOT:
                     kWheelRadiusMeters = Units.inchesToMeters(2);
-                    driveTrackWidthMeters = 0.465;
-                    driveWheelbaseMeters = 0.465;
+                    kTrackWidthMeters = 0.465;
+                    kWheelbaseMeters = 0.465;
                     driveMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
+                    turnMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
                     kDriveReduction = kL3DriveReduction;
                     kSteerReduction = kMk4iSteerReduction;
                     kDriveMotorsInverted = true;
@@ -72,9 +83,10 @@ public final class Constants {
                     break;
                 case SIMULATION_BOT:
                     kWheelRadiusMeters = Units.inchesToMeters(2);
-                    driveTrackWidthMeters = 0.5;
-                    driveWheelbaseMeters = 0.5;
+                    kTrackWidthMeters = 0.5;
+                    kWheelbaseMeters = 0.5;
                     driveMotorMaxRPM = Constants.Motors.kMaxKrakenRPM;
+                    turnMotorMaxRPM = Constants.Motors.kMaxNeoRPM;
                     kDriveReduction = kL3DriveReduction * k16ToothKitReduction;
                     kSteerReduction = kMk4iSteerReduction;
                     kDriveMotorsInverted = true;
@@ -89,20 +101,23 @@ public final class Constants {
                     throw new UnsupportedOperationException("No drive configuration for " + Configuration.getRobot());
             }
 
+            kModuleRadius = Math.hypot(kTrackWidthMeters / 2.0, kWheelbaseMeters / 2.0);
             kMaxVelocityMetersPerSecond =
-                    driveMotorMaxRPM / 60.0 * (2 * Math.PI) * kDriveReduction * kWheelRadiusMeters;
+                    Units.rotationsPerMinuteToRadiansPerSecond(driveMotorMaxRPM) * kDriveReduction * kWheelRadiusMeters;
             kMaxAngularVelocityRadiansPerSecond =
-                    kMaxVelocityMetersPerSecond / Math.hypot(driveTrackWidthMeters / 2.0, driveWheelbaseMeters / 2.0);
+                    kMaxVelocityMetersPerSecond / Math.hypot(kTrackWidthMeters / 2.0, kWheelbaseMeters / 2.0);
+            kMaxSteerVelocityRadiansPerSecond =
+                    Units.rotationsPerMinuteToRadiansPerSecond(turnMotorMaxRPM) * kSteerReduction;
 
             kKinematics = new ExtendedSwerveDriveKinematics(
                     // Front left
-                    new Translation2d(driveTrackWidthMeters / 2.0, driveWheelbaseMeters / 2.0),
+                    new Translation2d(kTrackWidthMeters / 2.0, kWheelbaseMeters / 2.0),
                     // Front right
-                    new Translation2d(driveTrackWidthMeters / 2.0, -driveWheelbaseMeters / 2.0),
+                    new Translation2d(kTrackWidthMeters / 2.0, -kWheelbaseMeters / 2.0),
                     // Back left
-                    new Translation2d(-driveTrackWidthMeters / 2.0, driveWheelbaseMeters / 2.0),
+                    new Translation2d(-kTrackWidthMeters / 2.0, kWheelbaseMeters / 2.0),
                     // Back right
-                    new Translation2d(-driveTrackWidthMeters / 2.0, -driveWheelbaseMeters / 2.0));
+                    new Translation2d(-kTrackWidthMeters / 2.0, -kWheelbaseMeters / 2.0));
 
             kNumModules = kKinematics.getNumModules();
 
@@ -114,6 +129,22 @@ public final class Constants {
                     kMaxVelocityMetersPerSecond * 0.5,
                     kMaxVelocityMetersPerSecond * 0.5 / 0.2,
                     Units.degreesToRadians(750.0));
+            kFastTrapezoidalKinematicLimits = new KinematicLimits(
+                    kMaxVelocityMetersPerSecond * 0.8,
+                    kMaxVelocityMetersPerSecond * 0.8 / 1.5,
+                    kFastKinematicLimits.kMaxSteeringVelocity);
+            kSlowTrapezoidalKinematicLimits = new KinematicLimits(
+                    kMaxVelocityMetersPerSecond * 0.4,
+                    kMaxVelocityMetersPerSecond * 0.4 / 2.0,
+                    kFastKinematicLimits.kMaxSteeringVelocity);
+
+            kPathFollowerConfig = new HolonomicPathFollowerConfig(
+                    new PIDConstants(4.0, 0.0, 0.0),
+                    new PIDConstants(2.0, 0.0, 0.0),
+                    kMaxVelocityMetersPerSecond * 0.95,
+                    kModuleRadius,
+                    new ReplanningConfig(),
+                    kLoopPeriodSeconds);
         }
     }
 

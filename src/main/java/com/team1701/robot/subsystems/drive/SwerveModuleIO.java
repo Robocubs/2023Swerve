@@ -19,7 +19,7 @@ public class SwerveModuleIO {
         var steerMotorIO =
                 new MotorIOSim(steerMotor, Constants.Drive.kSteerReduction, 0.004, Constants.kLoopPeriodSeconds);
         steerMotorIO.enableContinuousInput(0, 2 * Math.PI);
-        var encoderOffset = new Rotation2d(Math.random() * 2 * Math.PI);
+        var encoderOffset = Rotation2d.fromRadians(Math.random() * 2 * Math.PI);
         var encoderIO = new EncoderIOSim(() -> steerMotorIO
                 .getPosition()
                 .times(Constants.Drive.kSteerReduction)

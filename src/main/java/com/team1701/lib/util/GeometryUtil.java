@@ -14,6 +14,7 @@ public final class GeometryUtil {
     public static final Rotation2d kRotationPi = new Rotation2d(Math.PI);
     public static final Rotation2d kRotationMinusPi = new Rotation2d(-Math.PI);
     public static final Rotation2d kRotationHalfPi = new Rotation2d(Math.PI / 2.0);
+    public static final Rotation2d kRotationMinusHalfPi = new Rotation2d(-Math.PI / 2.0);
     public static final Twist2d kTwistIdentity = new Twist2d();
     public static final Transform3d kTransform3dIdentity = new Transform3d();
     public static final Translation3d kTranslation3dIdentity = new Translation3d();
@@ -24,6 +25,13 @@ public final class GeometryUtil {
     }
 
     public static Rotation2d angleModulus(Rotation2d rotation) {
-        return new Rotation2d(MathUtil.angleModulus(rotation.getRadians()));
+        return Rotation2d.fromRadians(MathUtil.angleModulus(rotation.getRadians()));
+    }
+
+    public static boolean isNear(Rotation2d expected, Rotation2d actual, Rotation2d tolerance) {
+        return MathUtil.isNear(
+                MathUtil.angleModulus(expected.getRadians()),
+                MathUtil.angleModulus(actual.getRadians()),
+                tolerance.getRadians());
     }
 }
