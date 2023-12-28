@@ -29,36 +29,41 @@ public class DriveToPose extends Command {
             kLoggingPrefix + "MaxAngularVelocity", kMaxKinematicLimits.kMaxDriveVelocity / kModuleRadius);
     private static final LoggedTunableNumber kMaxAngularAcceleration =
             new LoggedTunableNumber(kLoggingPrefix + "MaxAngularAcceleration", kMaxAngularVelocity.get() / 2.0);
-    private static final LoggedTunableNumber kPositionKp = new LoggedTunableNumber(kLoggingPrefix + "PositionKp", 6.0);
-    private static final LoggedTunableNumber kPositionKi = new LoggedTunableNumber(kLoggingPrefix + "PositionKi", 0.0);
-    private static final LoggedTunableNumber kPositionKd = new LoggedTunableNumber(kLoggingPrefix + "PositionKd", 0.0);
+    private static final LoggedTunableNumber kTranslationKp =
+            new LoggedTunableNumber(kLoggingPrefix + "TranslationKp", 6.0);
+    private static final LoggedTunableNumber kTranslationKi =
+            new LoggedTunableNumber(kLoggingPrefix + "TranslationKi", 0.0);
+    private static final LoggedTunableNumber kTranslationKd =
+            new LoggedTunableNumber(kLoggingPrefix + "TranslationKd", 0.0);
     private static final LoggedTunableNumber kRotationKp = new LoggedTunableNumber(kLoggingPrefix + "RotationKp", 4.0);
     private static final LoggedTunableNumber kRotationKi = new LoggedTunableNumber(kLoggingPrefix + "RotationKi", 0.0);
     private static final LoggedTunableNumber kRotationKd = new LoggedTunableNumber(kLoggingPrefix + "RotationKd", 0.0);
-    private static final LoggedTunableNumber kPositionToleranceMeters =
-            new LoggedTunableNumber(kLoggingPrefix + "PositionToleranceMeters", 0.01);
+    private static final LoggedTunableNumber kTranslationToleranceMeters =
+            new LoggedTunableNumber(kLoggingPrefix + "TranslationToleranceMeters", 0.01);
     private static final LoggedTunableNumber kRotationToleranceRadians =
             new LoggedTunableNumber(kLoggingPrefix + "RotationToleranceRadians", 0.01);
 
     private final Drive mDrive;
     private final Pose2d mTargetPose;
     private final KinematicLimits mKinematicLimits;
-    private final PIDController mPositionController;
+    private final boolean mFinishAtPose;
+    private final PIDController mTranslationController;
     private final PIDController mRotationController;
 
     private Pose2d mSetpoint = GeometryUtil.kPoseIdentity;
-    private TrapezoidProfile mPositionProfile;
+    private TrapezoidProfile mTranslationProfile;
     private TrapezoidProfile mRotationProfile;
-    private TrapezoidProfile.State mPositionState = new TrapezoidProfile.State();
+    private TrapezoidProfile.State mTranslationState = new TrapezoidProfile.State();
     private TrapezoidProfile.State mRotationState = new TrapezoidProfile.State();
 
-    DriveToPose(Drive drive, Pose2d pose, KinematicLimits kinematicLimits) {
+    DriveToPose(Drive drive, Pose2d pose, KinematicLimits kinematicLimits, boolean finishAtPose) {
         mDrive = drive;
         mTargetPose = pose;
         mKinematicLimits = kinematicLimits;
+        mFinishAtPose = finishAtPose;
 
-        mPositionController = new PIDController(0.0, 0.0, 0.0, Constants.kLoopPeriodSeconds);
-        mPositionProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(0.0, 0.0));
+        mTranslationController = new PIDController(0.0, 0.0, 0.0, Constants.kLoopPeriodSeconds);
+        mTranslationProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(0.0, 0.0));
 
         mRotationController = new PIDController(0.0, 0.0, 0.0, Constants.kLoopPeriodSeconds);
         mRotationController.enableContinuousInput(-Math.PI, Math.PI);
@@ -72,7 +77,7 @@ public class DriveToPose extends Command {
         mDrive.setKinematicLimits(Constants.Drive.kFastKinematicLimits);
         mSetpoint = PoseEstimator.getInstance().getPose2d();
 
-        mPositionController.reset();
+        mTranslationController.reset();
         mRotationController.reset();
 
         var currentPose = PoseEstimator.getInstance().getPose2d();
@@ -81,7 +86,7 @@ public class DriveToPose extends Command {
         var fieldRelativeChassisSpeeds = mDrive.getFieldRelativeVelocity();
         var velocityToTarget =
                 ChassisSpeeds.fromFieldRelativeSpeeds(fieldRelativeChassisSpeeds, rotationToTarget).vxMetersPerSecond;
-        mPositionState = new TrapezoidProfile.State(translationToTarget.getNorm(), -velocityToTarget);
+        mTranslationState = new TrapezoidProfile.State(translationToTarget.getNorm(), -velocityToTarget);
         mRotationState = new TrapezoidProfile.State(
                 MathUtil.inputModulus(
                         currentPose.getRotation().getRadians(),
@@ -97,19 +102,19 @@ public class DriveToPose extends Command {
                 || kMaxAcceleration.hasChanged(hash)
                 || kMaxAngularVelocity.hasChanged(hash)
                 || kMaxAngularAcceleration.hasChanged(hash)
-                || kPositionKp.hasChanged(hash)
-                || kPositionKi.hasChanged(hash)
-                || kPositionKd.hasChanged(hash)
+                || kTranslationKp.hasChanged(hash)
+                || kTranslationKi.hasChanged(hash)
+                || kTranslationKd.hasChanged(hash)
                 || kRotationKp.hasChanged(hash)
                 || kRotationKi.hasChanged(hash)
                 || kRotationKd.hasChanged(hash)) {
-            mPositionProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(
+            mTranslationProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(
                     Math.min(kMaxVelocity.get(), mKinematicLimits.kMaxDriveVelocity),
                     Math.min(kMaxAcceleration.get(), mKinematicLimits.kMaxDriveAcceleration)));
             mRotationProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(
                     Math.min(kMaxAngularVelocity.get(), mKinematicLimits.kMaxDriveVelocity / kModuleRadius),
                     Math.min(kMaxAngularAcceleration.get(), mKinematicLimits.kMaxDriveAcceleration / kModuleRadius)));
-            mPositionController.setPID(kPositionKp.get(), kPositionKi.get(), kPositionKd.get());
+            mTranslationController.setPID(kTranslationKp.get(), kTranslationKi.get(), kTranslationKd.get());
             mRotationController.setPID(kRotationKp.get(), kRotationKi.get(), kRotationKd.get());
         }
 
@@ -119,10 +124,11 @@ public class DriveToPose extends Command {
         var headingToTarget = translationToTarget.getAngle();
 
         // Calculate directional velocity
-        var positionPidOutput = mPositionController.calculate(distanceToTarget, mPositionState.position);
-        var positionTargetState = new TrapezoidProfile.State(0.0, 0.0);
-        mPositionState = mPositionProfile.calculate(Constants.kLoopPeriodSeconds, mPositionState, positionTargetState);
-        var velocity = new Translation2d(-(mPositionState.velocity + positionPidOutput), headingToTarget);
+        var translationPidOutput = mTranslationController.calculate(distanceToTarget, mTranslationState.position);
+        var translationTargetState = new TrapezoidProfile.State(0.0, 0.0);
+        mTranslationState =
+                mTranslationProfile.calculate(Constants.kLoopPeriodSeconds, mTranslationState, translationTargetState);
+        var velocity = new Translation2d(-(mTranslationState.velocity + translationPidOutput), headingToTarget);
 
         // Calculate rotational velocity
         var rotationPidOutput =
@@ -133,7 +139,7 @@ public class DriveToPose extends Command {
         var rotationalVelocity = mRotationState.velocity + rotationPidOutput;
 
         // Set drive outputs
-        var atTargetPose = distanceToTarget < kPositionToleranceMeters.get()
+        var atTargetPose = distanceToTarget < kTranslationToleranceMeters.get()
                 && GeometryUtil.isNear(
                         mTargetPose.getRotation(),
                         currentPose.getRotation(),
@@ -145,11 +151,11 @@ public class DriveToPose extends Command {
             mDrive.setVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(
                     velocity.getX(), velocity.getY(), rotationalVelocity, currentPose.getRotation()));
             mSetpoint = new Pose2d(
-                    mTargetPose.getTranslation().minus(new Translation2d(mPositionState.position, headingToTarget)),
+                    mTargetPose.getTranslation().minus(new Translation2d(mTranslationState.position, headingToTarget)),
                     Rotation2d.fromRadians(mRotationState.position));
         }
 
-        Logger.recordOutput(kLoggingPrefix + "PositionError", mPositionController.getPositionError());
+        Logger.recordOutput(kLoggingPrefix + "TranslationError", mTranslationController.getPositionError());
         Logger.recordOutput(
                 kLoggingPrefix + "RotationError", Rotation2d.fromRadians(mRotationController.getPositionError()));
         Logger.recordOutput(kLoggingPrefix + "Setpoint", mSetpoint);
@@ -161,11 +167,16 @@ public class DriveToPose extends Command {
         mDrive.stop();
     }
 
+    @Override
+    public boolean isFinished() {
+        return mFinishAtPose && atTargetPose();
+    }
+
     public boolean atTargetPose() {
         var currentPose = PoseEstimator.getInstance().getPose2d();
-        var positionError =
+        var translationError =
                 mTargetPose.getTranslation().minus(currentPose.getTranslation()).getNorm();
-        return Util.inRange(positionError, kPositionToleranceMeters.get())
+        return Util.inRange(translationError, kTranslationToleranceMeters.get())
                 && GeometryUtil.isNear(
                         mTargetPose.getRotation(),
                         currentPose.getRotation(),

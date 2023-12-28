@@ -11,7 +11,10 @@ import com.team1701.robot.subsystems.drive.Drive;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
+
+import static com.team1701.lib.commands.LoggedCommands.*;
+import static com.team1701.lib.commands.NamedCommands.*;
+import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 public class AutonomousCommands {
     private final Drive mDrive;
@@ -19,11 +22,11 @@ public class AutonomousCommands {
     public AutonomousCommands(Drive drive) {
         mDrive = drive;
 
-        NamedCommands.registerCommand("printHello", Commands.print("Hello from autonomous path"));
+        NamedCommands.registerCommand("printHello", print("Hello from autonomous path"));
     }
 
     private Command resetPose(Pose2d pose) {
-        return Commands.runOnce(() -> PoseEstimator.getInstance().setPose(pose));
+        return runOnce("ResetPose", () -> PoseEstimator.getInstance().setPose(pose));
     }
 
     private Command driveToPose(Pose2d pose) {
@@ -39,8 +42,7 @@ public class AutonomousCommands {
     }
 
     private Command driveToPose(Pose2d pose, KinematicLimits kinematicLimits, boolean finishAtPose) {
-        var driveToPose = DriveCommands.driveToPose(mDrive, pose, kinematicLimits);
-        return finishAtPose ? driveToPose.until(driveToPose::atTargetPose) : driveToPose;
+        return DriveCommands.driveToPose(mDrive, pose, kinematicLimits, finishAtPose);
     }
 
     private Command followPath(String pathName) {
@@ -50,25 +52,28 @@ public class AutonomousCommands {
     private Command followPath(String pathName, boolean resetPose) {
         var path = PathPlannerPath.fromPathFile(pathName);
         if (path == null) {
-            return Commands.none();
+            return none();
         }
 
-        var pathCommand = AutoBuilder.followPathWithEvents(path);
-        if (!resetPose) {
-            return pathCommand;
+        var command = AutoBuilder.followPathWithEvents(path);
+        if (resetPose) {
+            command = command.beforeStarting(resetPose(path.getPreviewStartingHolonomicPose()));
+            command.setName("ResetPoseAndFollowPathWithEvents");
         }
 
-        return Commands.sequence(resetPose(path.getPreviewStartingHolonomicPose()), pathCommand);
+        return command;
     }
 
     public Command demo() {
-        return Commands.sequence(
-                Commands.print("Starting demo"),
+        var command = sequence(
+                "AutonomousDemo",
+                print("Starting demo"),
                 followPath("demo1", true),
                 driveToPose(new Pose2d(2.0, 1.0, Rotation2d.fromRadians(-Math.PI * 2.0 / 3.0))),
                 driveToPose(new Pose2d(10.0, 1.0, GeometryUtil.kRotationHalfPi)),
                 driveToPose(new Pose2d(2.0, 5.0, GeometryUtil.kRotationIdentity), Constants.Drive.kSlowKinematicLimits),
                 followPath("demo2"),
                 driveToPose(new Pose2d(10.0, 5.0, GeometryUtil.kRotationMinusHalfPi), false));
+        return command;
     }
 }

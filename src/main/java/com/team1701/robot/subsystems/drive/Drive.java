@@ -27,8 +27,6 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class Drive extends SubsystemBase {
-    private static Drive mInstance = null;
-
     private final PoseEstimator mPoseEstimator = PoseEstimator.getInstance();
     private final GyroInputsAutoLogged mGyroInputs = new GyroInputsAutoLogged();
     private final GyroIO mGyroIO;
@@ -51,16 +49,11 @@ public class Drive extends SubsystemBase {
     @AutoLogOutput(key = "Drive/MeasuredStates")
     private SwerveModuleState[] mMeasuredModuleStates;
 
-    public static synchronized Drive build(GyroIO gyroIO, SwerveModuleIO[] moduleIOs) {
-        if (mInstance != null) {
-            throw new IllegalStateException("Drive already initialized");
+    public Drive(GyroIO gyroIO, SwerveModuleIO[] moduleIOs) {
+        if (moduleIOs.length != Constants.Drive.kNumModules) {
+            throw new IllegalArgumentException("Module IOs must have length " + Constants.Drive.kNumModules);
         }
 
-        mInstance = new Drive(gyroIO, moduleIOs);
-        return mInstance;
-    }
-
-    private Drive(GyroIO gyroIO, SwerveModuleIO[] moduleIOs) {
         mDesiredModuleOrientations = new Rotation2d[moduleIOs.length];
         Arrays.setAll(mDesiredModuleOrientations, i -> GeometryUtil.kRotationIdentity);
 
@@ -165,7 +158,7 @@ public class Drive extends SubsystemBase {
         }
 
         if (mDriveControlState == DriveControlState.ORIENT_MODULES
-                && Arrays.stream(mMeasuredModuleStates)
+                && Stream.of(mMeasuredModuleStates)
                         .allMatch(state -> MathUtil.isNear(
                                 0.0, state.speedMetersPerSecond, Constants.Drive.kMinLockVelocityMetersPerSecond))) {
             var desiredModuleStates = new SwerveModuleState[mModules.length];

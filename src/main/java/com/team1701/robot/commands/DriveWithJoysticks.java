@@ -4,10 +4,12 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.team1701.lib.swerve.SwerveSetpointGenerator.KinematicLimits;
+import com.team1701.robot.Configuration;
 import com.team1701.robot.Constants;
 import com.team1701.robot.subsystems.drive.Drive;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 
 public class DriveWithJoysticks extends Command {
@@ -36,8 +38,9 @@ public class DriveWithJoysticks extends Command {
         var kinematicLimits = mKinematicLimits.get();
         mDrive.setKinematicLimits(kinematicLimits);
 
-        var throttle = mThrottle.getAsDouble();
-        var strafe = mStrafe.getAsDouble();
+        var translationSign = Configuration.getAlliance().equals(Alliance.Blue) ? 1.0 : -1.0;
+        var throttle = mThrottle.getAsDouble() * translationSign;
+        var strafe = mStrafe.getAsDouble() * translationSign;
         var magnitude = Math.hypot(throttle, strafe);
         var rotation = MathUtil.applyDeadband(mRotation.getAsDouble(), Constants.Controls.kDriverDeadband);
 

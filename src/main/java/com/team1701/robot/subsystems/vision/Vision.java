@@ -18,27 +18,12 @@ import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 
 public class Vision extends SubsystemBase {
-    private static Vision mInstance = null;
-
     private final PoseEstimator mPoseEstimator = PoseEstimator.getInstance();
     private final ArrayList<AprilTagCamera> mCameras = new ArrayList<AprilTagCamera>();
     private AprilTagFieldLayout mAprilTagFieldLayout = AprilTagFields.kDefaultField.loadAprilTagLayoutField();
     private Optional<VisionSystemSim> mVisionSim = Optional.empty();
 
-    public static synchronized Vision build(
-            PhotonCameraIO cameraIOFrontLeft,
-            PhotonCameraIO cameraIOFrontRight,
-            PhotonCameraIO cameraIOBackLeft,
-            PhotonCameraIO cameraIOBackRight) {
-        if (mInstance != null) {
-            throw new IllegalStateException("Vision already initialized");
-        }
-
-        mInstance = new Vision(cameraIOFrontLeft, cameraIOFrontRight, cameraIOBackLeft, cameraIOBackRight);
-        return mInstance;
-    }
-
-    private Vision(
+    public Vision(
             PhotonCameraIO cameraIOFrontLeft,
             PhotonCameraIO cameraIOFrontRight,
             PhotonCameraIO cameraIOBackLeft,
