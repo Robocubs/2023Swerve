@@ -5,8 +5,9 @@ import java.util.stream.Stream;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.PathPlannerLogging;
-import com.team1701.lib.cameras.PhotonCameraIO;
-import com.team1701.lib.cameras.PhotonCameraIOPhotonCamera;
+import com.team1701.lib.alerts.Alert;
+import com.team1701.lib.cameras.AprilTagCameraIO;
+import com.team1701.lib.cameras.AprilTagCameraIOPhotonCamera;
 import com.team1701.lib.drivers.encoders.EncoderIO;
 import com.team1701.lib.drivers.encoders.EncoderIOAnalog;
 import com.team1701.lib.drivers.gyros.GyroIO;
@@ -84,10 +85,10 @@ public class RobotContainer {
             }
 
             vision = Optional.of(new Vision(
-                    new PhotonCameraIOPhotonCamera(Constants.Vision.kFrontLeftCameraName),
-                    new PhotonCameraIOPhotonCamera(Constants.Vision.kFrontRightCameraName),
-                    new PhotonCameraIOPhotonCamera(Constants.Vision.kBackLeftCameraName),
-                    new PhotonCameraIOPhotonCamera(Constants.Vision.kBackRightCameraName)));
+                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kFrontLeftCameraName),
+                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kFrontRightCameraName),
+                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kBackLeftCameraName),
+                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kBackRightCameraName)));
         }
 
         this.mDrive = drive.orElseGet(() -> new Drive(
@@ -97,7 +98,10 @@ public class RobotContainer {
                         .toArray(SwerveModuleIO[]::new)));
 
         this.mVision = vision.orElseGet(() -> new Vision(
-                new PhotonCameraIO() {}, new PhotonCameraIO() {}, new PhotonCameraIO() {}, new PhotonCameraIO() {}));
+                new AprilTagCameraIO() {},
+                new AprilTagCameraIO() {},
+                new AprilTagCameraIO() {},
+                new AprilTagCameraIO() {}));
 
         var teleopTrigger = new Trigger(DriverStation::isTeleopEnabled);
         teleopTrigger.onTrue(runOnce(
@@ -115,7 +119,7 @@ public class RobotContainer {
                 () -> -mDriverController.getLeftY(),
                 () -> -mDriverController.getLeftX(),
                 () -> -mDriverController.getRightX(),
-                () -> mDriverController.leftBumper().getAsBoolean()
+                () -> mDriverController.rightTrigger().getAsBoolean()
                         ? Constants.Drive.kSlowKinematicLimits
                         : Constants.Drive.kFastKinematicLimits));
         mDriverController
@@ -127,6 +131,12 @@ public class RobotContainer {
                                         ? GeometryUtil.kRotationIdentity
                                         : GeometryUtil.kRotationPi)));
         mDriverController.leftTrigger().whileTrue(swerveLock(mDrive));
+
+        var rightBumperAlert = Alert.info("Driver right bumper pressed");
+        mDriverController
+                .rightBumper()
+                .onTrue(runOnce("EnableAlert", () -> rightBumperAlert.enable()))
+                .onFalse(runOnce("DisableAlert", () -> rightBumperAlert.disable()));
     }
 
     private void setupAutonomous() {

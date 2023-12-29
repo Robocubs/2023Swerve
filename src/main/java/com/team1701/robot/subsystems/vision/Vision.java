@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.team1701.lib.cameras.AprilTagCamera;
-import com.team1701.lib.cameras.PhotonCameraIO;
+import com.team1701.lib.cameras.AprilTagCameraIO;
 import com.team1701.robot.Constants;
 import com.team1701.robot.Robot;
 import com.team1701.robot.estimation.PoseEstimator;
@@ -24,10 +24,10 @@ public class Vision extends SubsystemBase {
     private Optional<VisionSystemSim> mVisionSim = Optional.empty();
 
     public Vision(
-            PhotonCameraIO cameraIOFrontLeft,
-            PhotonCameraIO cameraIOFrontRight,
-            PhotonCameraIO cameraIOBackLeft,
-            PhotonCameraIO cameraIOBackRight) {
+            AprilTagCameraIO cameraIOFrontLeft,
+            AprilTagCameraIO cameraIOFrontRight,
+            AprilTagCameraIO cameraIOBackLeft,
+            AprilTagCameraIO cameraIOBackRight) {
         Supplier<AprilTagFieldLayout> fieldLayoutSupplier = () -> mAprilTagFieldLayout;
 
         mCameras.add(new AprilTagCamera(

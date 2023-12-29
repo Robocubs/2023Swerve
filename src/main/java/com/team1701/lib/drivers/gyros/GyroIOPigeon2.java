@@ -11,7 +11,6 @@ import com.ctre.phoenix6.configs.Pigeon2Configurator;
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.team1701.lib.util.SignalSamplingThread;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.DriverStation;
 
 public class GyroIOPigeon2 implements GyroIO {
     private final Pigeon2 mPigeon;
@@ -46,10 +45,9 @@ public class GyroIOPigeon2 implements GyroIO {
     }
 
     @Override
-    public void enableYawSampling(SignalSamplingThread samplingThread) {
+    public synchronized void enableYawSampling(SignalSamplingThread samplingThread) {
         if (mYawDegreesSamples.isPresent()) {
-            DriverStation.reportWarning("Yaw sampling already enabled", false);
-            return;
+            throw new IllegalStateException("Yaw sampling already enabled");
         }
 
         mYawSignal.setUpdateFrequency(samplingThread.getFrequency());

@@ -80,20 +80,18 @@ public class MotorIOSim implements MotorIO {
     }
 
     @Override
-    public void enablePositionSampling(SignalSamplingThread samplingThread) {
+    public synchronized void enablePositionSampling(SignalSamplingThread samplingThread) {
         if (mPositionSamplingEnabled) {
-            DriverStation.reportWarning("Position sampling already enabled", false);
-            return;
+            throw new IllegalStateException("Position sampling already enabled");
         }
 
         mPositionSamplingEnabled = true;
     }
 
     @Override
-    public void enableVelocitySampling(SignalSamplingThread samplingThread) {
+    public synchronized void enableVelocitySampling(SignalSamplingThread samplingThread) {
         if (mVelocitySamplingEnabled) {
-            DriverStation.reportWarning("Velocity sampling already enabled", false);
-            return;
+            throw new IllegalStateException("Velocity sampling already enabled");
         }
 
         mVelocitySamplingEnabled = true;

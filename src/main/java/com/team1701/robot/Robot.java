@@ -10,6 +10,7 @@ import com.team1701.lib.commands.CommandLogger;
 import com.team1701.robot.Configuration.Mode;
 import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.wpilibj.simulation.DriverStationSim;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.littletonrobotics.junction.LogFileUtil;
@@ -20,14 +21,12 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 public class Robot extends LoggedRobot {
-    private CommandLogger mCommandLogger;
     private RobotContainer mRobotContainer;
     private Optional<Command> mAutonomousCommand = Optional.empty();
 
     @Override
     public void robotInit() {
         initializeAdvantageKit();
-        mCommandLogger = CommandLogger.getInstance();
         mRobotContainer = new RobotContainer();
     }
 
@@ -80,7 +79,8 @@ public class Robot extends LoggedRobot {
     @Override
     public void robotPeriodic() {
         CommandScheduler.getInstance().run();
-        mCommandLogger.periodic();
+        CommandLogger.getInstance().periodic();
+        SmartDashboard.putData(CommandScheduler.getInstance());
     }
 
     @Override
