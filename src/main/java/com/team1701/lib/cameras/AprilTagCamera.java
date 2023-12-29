@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import com.team1701.lib.cameras.PhotonCameraIO.PhotonCameraInputs;
+import com.team1701.lib.cameras.AprilTagCameraIO.PhotonCameraInputs;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -20,7 +20,7 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class AprilTagCamera {
-    private final PhotonCameraIO mCameraIO;
+    private final AprilTagCameraIO mCameraIO;
     private final PhotonCameraInputs mCameraInputs;
     private final String mLoggingPrefix;
     private final PhotonPoseEstimator mPoseEstimator;
@@ -33,7 +33,7 @@ public class AprilTagCamera {
 
     public AprilTagCamera(
             String cameraName,
-            PhotonCameraIO cameraIO,
+            AprilTagCameraIO cameraIO,
             Transform3d robotToCamPose,
             PoseStrategy poseStrategy,
             Supplier<AprilTagFieldLayout> fieldLayoutSupplier,

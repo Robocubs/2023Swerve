@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 import com.team1701.lib.util.GeometryUtil;
 import com.team1701.lib.util.SignalSamplingThread;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.DriverStation;
 
 public class GyroIOSim implements GyroIO {
     private Supplier<Rotation2d> mYawSupplier;
@@ -33,10 +32,9 @@ public class GyroIOSim implements GyroIO {
     }
 
     @Override
-    public void enableYawSampling(SignalSamplingThread samplingThread) {
+    public synchronized void enableYawSampling(SignalSamplingThread samplingThread) {
         if (mYawSamplingEnabled) {
-            DriverStation.reportWarning("Yaw sampling already enabled", false);
-            return;
+            throw new IllegalStateException("Yaw sampling already enabled");
         }
 
         mYawSamplingEnabled = true;

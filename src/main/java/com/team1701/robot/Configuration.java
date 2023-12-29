@@ -1,5 +1,6 @@
 package com.team1701.robot;
 
+import com.team1701.lib.alerts.Alert;
 import com.team1701.lib.util.LoggedTunableNumber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -14,7 +15,7 @@ public final class Configuration {
 
     public static RobotType getRobot() {
         if (Robot.isReal() && kRobot == RobotType.SIMULATION_BOT) {
-            DriverStation.reportWarning("Invalid robot configured, using swerve bot as default.", false);
+            Alert.warning(Configuration.class, "Invalid robot configured. Using swerve bot as default.");
             return RobotType.SWERVE_BOT;
         }
 

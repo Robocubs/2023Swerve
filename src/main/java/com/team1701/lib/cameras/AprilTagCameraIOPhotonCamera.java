@@ -6,10 +6,10 @@ import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
 
-public class PhotonCameraIOPhotonCamera implements PhotonCameraIO {
+public class AprilTagCameraIOPhotonCamera implements AprilTagCameraIO {
     private final PhotonCamera mCamera;
 
-    public PhotonCameraIOPhotonCamera(String cameraName) {
+    public AprilTagCameraIOPhotonCamera(String cameraName) {
         mCamera = new PhotonCamera(cameraName);
     }
 

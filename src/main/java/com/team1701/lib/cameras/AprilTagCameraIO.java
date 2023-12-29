@@ -12,7 +12,7 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
 
-public interface PhotonCameraIO {
+public interface AprilTagCameraIO {
     public class PhotonCameraInputs implements LoggableInputs {
         public PhotonPipelineResult pipelineResult = new PhotonPipelineResult();
         public boolean isConnected;

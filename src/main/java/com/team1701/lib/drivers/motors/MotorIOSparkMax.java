@@ -10,7 +10,6 @@ import com.revrobotics.SparkMaxPIDController;
 import com.team1701.lib.util.SignalSamplingThread;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DriverStation;
 
 public class MotorIOSparkMax implements MotorIO {
     private final CANSparkMax mMotor;
@@ -83,10 +82,9 @@ public class MotorIOSparkMax implements MotorIO {
     }
 
     @Override
-    public void enablePositionSampling(SignalSamplingThread samplingThread) {
+    public synchronized void enablePositionSampling(SignalSamplingThread samplingThread) {
         if (mPositionSamples.isPresent()) {
-            DriverStation.reportWarning("Position sampling already enabled", false);
-            return;
+            throw new IllegalStateException("Position sampling already enabled");
         }
 
         var queue = samplingThread.addSignal(() -> Units.rotationsToRadians(mEncoder.getPosition()));
@@ -94,10 +92,9 @@ public class MotorIOSparkMax implements MotorIO {
     }
 
     @Override
-    public void enableVelocitySampling(SignalSamplingThread samplingThread) {
+    public synchronized void enableVelocitySampling(SignalSamplingThread samplingThread) {
         if (mVelocitySamples.isPresent()) {
-            DriverStation.reportWarning("Velocity sampling already enabled", false);
-            return;
+            throw new IllegalStateException("Velocity sampling already enabled");
         }
 
         var queue = samplingThread.addSignal(() -> Units.rotationsPerMinuteToRadiansPerSecond(mEncoder.getVelocity()));

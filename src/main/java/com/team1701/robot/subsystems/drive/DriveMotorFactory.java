@@ -1,40 +1,37 @@
 package com.team1701.robot.subsystems.drive;
 
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.REVLibError;
+import com.team1701.lib.alerts.REVAlert;
 import com.team1701.lib.drivers.motors.MotorIOSparkMax;
 import com.team1701.robot.Constants;
-import edu.wpi.first.wpilibj.DriverStation;
 
 public final class DriveMotorFactory {
     public static MotorIOSparkMax createDriveMotorIOSparkMax(int deviceId) {
         var motor = new CANSparkMax(deviceId, MotorType.kBrushless);
         var encoder = motor.getEncoder();
         var controller = motor.getPIDController();
-
-        Consumer<REVLibError> onError =
-                (error) -> DriverStation.reportWarning("Failed to configure Spark Max " + deviceId, false);
+        var errorAlert = new REVAlert(motor, deviceId);
 
         motor.setCANTimeout(200);
 
-        configureWithRetry(() -> motor.restoreFactoryDefaults(), onError);
+        configureWithRetry(() -> motor.restoreFactoryDefaults(), errorAlert);
 
-        configureWithRetry(() -> motor.setSmartCurrentLimit(80), onError);
-        configureWithRetry(() -> motor.enableVoltageCompensation(12), onError);
+        configureWithRetry(() -> motor.setSmartCurrentLimit(80), errorAlert);
+        configureWithRetry(() -> motor.enableVoltageCompensation(12), errorAlert);
 
-        configureWithRetry(() -> encoder.setPosition(0), onError);
-        configureWithRetry(() -> encoder.setMeasurementPeriod(10), onError);
-        configureWithRetry(() -> encoder.setAverageDepth(2), onError);
+        configureWithRetry(() -> encoder.setPosition(0), errorAlert);
+        configureWithRetry(() -> encoder.setMeasurementPeriod(10), errorAlert);
+        configureWithRetry(() -> encoder.setAverageDepth(2), errorAlert);
 
-        configureWithRetry(() -> controller.setP(Constants.Drive.kDriveKp.get()), onError);
-        configureWithRetry(() -> controller.setD(Constants.Drive.kDriveKd.get()), onError);
-        configureWithRetry(() -> controller.setFF(Constants.Drive.kDriveKf.get()), onError);
+        configureWithRetry(() -> controller.setP(Constants.Drive.kDriveKp.get()), errorAlert);
+        configureWithRetry(() -> controller.setD(Constants.Drive.kDriveKd.get()), errorAlert);
+        configureWithRetry(() -> controller.setFF(Constants.Drive.kDriveKf.get()), errorAlert);
 
-        configureWithRetry(() -> motor.burnFlash(), onError);
+        configureWithRetry(() -> motor.burnFlash(), errorAlert);
 
         motor.setInverted(Constants.Drive.kDriveMotorsInverted);
         motor.setCANTimeout(0);
@@ -46,30 +43,28 @@ public final class DriveMotorFactory {
         var motor = new CANSparkMax(deviceId, MotorType.kBrushless);
         var encoder = motor.getEncoder();
         var controller = motor.getPIDController();
-
-        Consumer<REVLibError> onError =
-                (error) -> DriverStation.reportWarning("Failed to configure Spark Max " + deviceId, false);
+        var errorAlert = new REVAlert(motor, deviceId);
 
         motor.setCANTimeout(200);
 
-        configureWithRetry(() -> motor.restoreFactoryDefaults(), onError);
+        configureWithRetry(() -> motor.restoreFactoryDefaults(), errorAlert);
 
-        configureWithRetry(() -> motor.setSmartCurrentLimit(30), onError);
-        configureWithRetry(() -> motor.enableVoltageCompensation(12.0), onError);
+        configureWithRetry(() -> motor.setSmartCurrentLimit(30), errorAlert);
+        configureWithRetry(() -> motor.enableVoltageCompensation(12.0), errorAlert);
 
-        configureWithRetry(() -> encoder.setPosition(0), onError);
-        configureWithRetry(() -> encoder.setMeasurementPeriod(10), onError);
-        configureWithRetry(() -> encoder.setAverageDepth(2), onError);
+        configureWithRetry(() -> encoder.setPosition(0), errorAlert);
+        configureWithRetry(() -> encoder.setMeasurementPeriod(10), errorAlert);
+        configureWithRetry(() -> encoder.setAverageDepth(2), errorAlert);
 
-        configureWithRetry(() -> controller.setP(Constants.Drive.kSteerKp.get()), onError);
-        configureWithRetry(() -> controller.setD(Constants.Drive.kSteerKd.get()), onError);
+        configureWithRetry(() -> controller.setP(Constants.Drive.kSteerKp.get()), errorAlert);
+        configureWithRetry(() -> controller.setD(Constants.Drive.kSteerKd.get()), errorAlert);
 
-        configureWithRetry(() -> controller.setPositionPIDWrappingEnabled(true), onError);
-        configureWithRetry(() -> controller.setPositionPIDWrappingMinInput(0), onError);
+        configureWithRetry(() -> controller.setPositionPIDWrappingEnabled(true), errorAlert);
+        configureWithRetry(() -> controller.setPositionPIDWrappingMinInput(0), errorAlert);
         configureWithRetry(
-                () -> controller.setPositionPIDWrappingMaxInput(1.0 / Constants.Drive.kSteerReduction), onError);
+                () -> controller.setPositionPIDWrappingMaxInput(1.0 / Constants.Drive.kSteerReduction), errorAlert);
 
-        configureWithRetry(() -> motor.burnFlash(), onError);
+        configureWithRetry(() -> motor.burnFlash(), errorAlert);
 
         motor.setInverted(Constants.Drive.kSteerMotorsInverted);
         motor.setCANTimeout(0);
@@ -77,7 +72,7 @@ public final class DriveMotorFactory {
         return new MotorIOSparkMax(motor, Constants.Drive.kSteerReduction);
     }
 
-    private static void configureWithRetry(Supplier<REVLibError> config, Consumer<REVLibError> onFailure) {
+    private static void configureWithRetry(Supplier<REVLibError> config, REVAlert failureAlert) {
         REVLibError error = REVLibError.kUnknown;
         for (var i = 0; i < 4; i++) {
             error = config.get();
@@ -86,6 +81,6 @@ public final class DriveMotorFactory {
             }
         }
 
-        onFailure.accept(error);
+        failureAlert.enable(error);
     }
 }
