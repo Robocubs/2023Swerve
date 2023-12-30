@@ -28,17 +28,21 @@ public class CommandLogger {
     }
 
     private CommandLogger() {
-        CommandScheduler.getInstance().onCommandInitialize(command -> onCommandInitialize(command.getName(), command));
-        CommandScheduler.getInstance().onCommandFinish(command -> onCommandEnd(command.getName(), command, false));
-        CommandScheduler.getInstance().onCommandInterrupt(command -> onCommandEnd(command.getName(), command, true));
+        CommandScheduler.getInstance().onCommandInitialize(this::logInitialized);
+        CommandScheduler.getInstance().onCommandFinish(this::logFinished);
+        CommandScheduler.getInstance().onCommandInterrupt(this::logInterrupted);
     }
 
-    public void onCommandInitialize(String name, Command command) {
-        logCommand(name, command, true, "Initialized");
+    public void logInitialized(Command command) {
+        logCommand(command, true, "Initialized");
     }
 
-    public void onCommandEnd(String name, Command command, boolean interrupted) {
-        logCommand(name, command, false, interrupted ? "Interrupted" : "Finished");
+    public void logFinished(Command command) {
+        logCommand(command, false, "Finished");
+    }
+
+    public void logInterrupted(Command command) {
+        logCommand(command, false, "Interrupted");
     }
 
     public void periodic() {
@@ -46,7 +50,8 @@ public class CommandLogger {
         commandEvents.clear();
     }
 
-    private void logCommand(String name, Command command, boolean active, String event) {
+    private void logCommand(Command command, boolean active, String event) {
+        var name = command.getName();
         var count = commandCounts.getOrDefault(name, 0) + (active ? 1 : -1);
         commandCounts.put(name, count);
 

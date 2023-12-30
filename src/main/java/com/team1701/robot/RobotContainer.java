@@ -32,8 +32,8 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
-import static com.team1701.lib.commands.NamedCommands.*;
 import static com.team1701.robot.commands.DriveCommands.*;
+import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 public class RobotContainer {
     public final Drive mDrive;
@@ -126,12 +126,11 @@ public class RobotContainer {
                         : Constants.Drive.kFastKinematicLimits));
         mDriverController
                 .x()
-                .onTrue(runOnce(
-                        "ZeroGyroscopeToHeading",
-                        () -> mDrive.zeroGyroscope(
+                .onTrue(runOnce(() -> mDrive.zeroGyroscope(
                                 Configuration.getAlliance().equals(Alliance.Blue)
                                         ? GeometryUtil.kRotationIdentity
-                                        : GeometryUtil.kRotationPi)));
+                                        : GeometryUtil.kRotationPi))
+                        .withName("ZeroGyroscopeToHeading"));
         mDriverController.leftTrigger().whileTrue(swerveLock(mDrive));
         TriggeredAlert.info("Driver right bumper pressed", mDriverController.rightBumper());
 
@@ -158,10 +157,9 @@ public class RobotContainer {
 
     private void setupStateTriggers() {
         var teleopTrigger = new Trigger(DriverStation::isTeleopEnabled);
-        teleopTrigger.onTrue(runOnce(
-                "ZeroGyroscopeToPose",
-                () -> mDrive.zeroGyroscope(
-                        PoseEstimator.getInstance().getPose2d().getRotation())));
+        teleopTrigger.onTrue(runOnce(() -> mDrive.zeroGyroscope(
+                        PoseEstimator.getInstance().getPose2d().getRotation()))
+                .withName("ZeroGyroscopeToPose"));
     }
 
     public Optional<Command> getAutonomousCommand() {

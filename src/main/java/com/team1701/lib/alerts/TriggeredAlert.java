@@ -3,7 +3,7 @@ package com.team1701.lib.alerts;
 import java.util.function.BooleanSupplier;
 
 import com.team1701.lib.alerts.Alert.AlertType;
-import com.team1701.lib.commands.NamedCommands;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class TriggeredAlert {
@@ -35,8 +35,8 @@ public class TriggeredAlert {
 
     private TriggeredAlert(AlertType type, String message, Trigger trigger) {
         mAlert = new Alert(type, message);
-        trigger.onTrue(NamedCommands.runOnce("EnableAlert", mAlert::enable).ignoringDisable(true));
-        trigger.onFalse(NamedCommands.runOnce("DisableAlert", mAlert::disable).ignoringDisable(true));
+        trigger.onTrue(Commands.runOnce(mAlert::enable).ignoringDisable(true).withName("EnableAlert"));
+        trigger.onFalse(Commands.runOnce(mAlert::disable).ignoringDisable(true).withName("DisableAlert"));
         mAlert.setEnabled(trigger.getAsBoolean());
     }
 }

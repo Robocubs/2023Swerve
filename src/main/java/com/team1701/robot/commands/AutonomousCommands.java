@@ -13,7 +13,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 
 import static com.team1701.lib.commands.LoggedCommands.*;
-import static com.team1701.lib.commands.NamedCommands.*;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 public class AutonomousCommands {
@@ -26,7 +25,7 @@ public class AutonomousCommands {
     }
 
     private Command resetPose(Pose2d pose) {
-        return runOnce("ResetPose", () -> PoseEstimator.getInstance().setPose(pose));
+        return runOnce(() -> PoseEstimator.getInstance().setPose(pose)).withName("ResetPose");
     }
 
     private Command driveToPose(Pose2d pose) {
@@ -65,15 +64,16 @@ public class AutonomousCommands {
     }
 
     public Command demo() {
-        var command = sequence(
-                "AutonomousDemo",
-                print("Starting demo"),
-                followPath("demo1", true),
-                driveToPose(new Pose2d(2.0, 1.0, Rotation2d.fromRadians(-Math.PI * 2.0 / 3.0))),
-                driveToPose(new Pose2d(10.0, 1.0, GeometryUtil.kRotationHalfPi)),
-                driveToPose(new Pose2d(2.0, 5.0, GeometryUtil.kRotationIdentity), Constants.Drive.kSlowKinematicLimits),
-                followPath("demo2"),
-                driveToPose(new Pose2d(10.0, 5.0, GeometryUtil.kRotationMinusHalfPi), false));
-        return command;
+        return loggedSequence(
+                        print("Starting demo"),
+                        followPath("demo1", true),
+                        driveToPose(new Pose2d(2.0, 1.0, Rotation2d.fromRadians(-Math.PI * 2.0 / 3.0))),
+                        driveToPose(new Pose2d(10.0, 1.0, GeometryUtil.kRotationHalfPi)),
+                        driveToPose(
+                                new Pose2d(2.0, 5.0, GeometryUtil.kRotationIdentity),
+                                Constants.Drive.kSlowKinematicLimits),
+                        followPath("demo2"),
+                        driveToPose(new Pose2d(10.0, 5.0, GeometryUtil.kRotationMinusHalfPi), false))
+                .withName("AutonomousDemo");
     }
 }
