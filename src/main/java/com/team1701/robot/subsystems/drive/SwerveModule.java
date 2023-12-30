@@ -1,14 +1,17 @@
 package com.team1701.robot.subsystems.drive;
 
 import com.team1701.lib.drivers.encoders.EncoderIO;
+import com.team1701.lib.drivers.encoders.EncoderIOSim;
 import com.team1701.lib.drivers.encoders.EncoderInputsAutoLogged;
 import com.team1701.lib.drivers.motors.MotorIO;
+import com.team1701.lib.drivers.motors.MotorIOSim;
 import com.team1701.lib.drivers.motors.MotorInputsAutoLogged;
 import com.team1701.lib.util.GeometryUtil;
 import com.team1701.robot.Constants;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.system.plant.DCMotor;
 import org.littletonrobotics.junction.Logger;
 
 public class SwerveModule {
@@ -23,6 +26,22 @@ public class SwerveModule {
     private Rotation2d mMeasuredAngle = GeometryUtil.kRotationIdentity;
     private Rotation2d mAngleOffset = GeometryUtil.kRotationIdentity;
     private boolean mAngleOffsetNotInitialized = true;
+
+    public static record SwerveModuleIO(MotorIO driveMotorIO, MotorIO steerMotorIO, EncoderIO steerEncoderIO) {
+        public static SwerveModuleIO createSim(DCMotor driveMotor, DCMotor steerMotor) {
+            var driveMotorIO =
+                    new MotorIOSim(driveMotor, Constants.Drive.kDriveReduction, 0.025, Constants.kLoopPeriodSeconds);
+            var steerMotorIO =
+                    new MotorIOSim(steerMotor, Constants.Drive.kSteerReduction, 0.004, Constants.kLoopPeriodSeconds);
+            steerMotorIO.enableContinuousInput(0, 2 * Math.PI);
+            var encoderOffset = Rotation2d.fromRadians(Math.random() * 2 * Math.PI);
+            var encoderIO = new EncoderIOSim(() -> steerMotorIO
+                    .getPosition()
+                    .times(Constants.Drive.kSteerReduction)
+                    .plus(encoderOffset));
+            return new SwerveModuleIO(driveMotorIO, steerMotorIO, encoderIO);
+        }
+    }
 
     public SwerveModule(int index, SwerveModuleIO moduleIO) {
         mIndex = index;

@@ -5,7 +5,7 @@ import java.util.stream.Stream;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.PathPlannerLogging;
-import com.team1701.lib.alerts.Alert;
+import com.team1701.lib.alerts.TriggeredAlert;
 import com.team1701.lib.cameras.AprilTagCameraIO;
 import com.team1701.lib.cameras.AprilTagCameraIOPhotonCamera;
 import com.team1701.lib.drivers.encoders.EncoderIO;
@@ -20,7 +20,7 @@ import com.team1701.robot.commands.AutonomousCommands;
 import com.team1701.robot.estimation.PoseEstimator;
 import com.team1701.robot.subsystems.drive.Drive;
 import com.team1701.robot.subsystems.drive.DriveMotorFactory;
-import com.team1701.robot.subsystems.drive.SwerveModuleIO;
+import com.team1701.robot.subsystems.drive.SwerveModule.SwerveModuleIO;
 import com.team1701.robot.subsystems.vision.Vision;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -103,17 +103,19 @@ public class RobotContainer {
                 new AprilTagCameraIO() {},
                 new AprilTagCameraIO() {}));
 
-        var teleopTrigger = new Trigger(DriverStation::isTeleopEnabled);
-        teleopTrigger.onTrue(runOnce(
-                "ZeroGyroscopeToPose",
-                () -> mDrive.zeroGyroscope(
-                        PoseEstimator.getInstance().getPose2d().getRotation())));
-
         setupControllerBindings();
         setupAutonomous();
+        setupStateTriggers();
     }
 
     private void setupControllerBindings() {
+        TriggeredAlert.error(
+                "Driver controller disconnected",
+                () -> !DriverStation.isJoystickConnected(
+                                mDriverController.getHID().getPort())
+                        || !DriverStation.getJoystickIsXbox(
+                                mDriverController.getHID().getPort()));
+
         mDrive.setDefaultCommand(driveWithJoysticks(
                 mDrive,
                 () -> -mDriverController.getLeftY(),
@@ -131,12 +133,9 @@ public class RobotContainer {
                                         ? GeometryUtil.kRotationIdentity
                                         : GeometryUtil.kRotationPi)));
         mDriverController.leftTrigger().whileTrue(swerveLock(mDrive));
+        TriggeredAlert.info("Driver right bumper pressed", mDriverController.rightBumper());
 
-        var rightBumperAlert = Alert.info("Driver right bumper pressed");
-        mDriverController
-                .rightBumper()
-                .onTrue(runOnce("EnableAlert", () -> rightBumperAlert.enable()))
-                .onFalse(runOnce("DisableAlert", () -> rightBumperAlert.disable()));
+        DriverStation.silenceJoystickConnectionWarning(true);
     }
 
     private void setupAutonomous() {
@@ -155,6 +154,14 @@ public class RobotContainer {
 
         var commands = new AutonomousCommands(mDrive);
         autonomousModeChooser.addDefaultOption("Demo", commands.demo());
+    }
+
+    private void setupStateTriggers() {
+        var teleopTrigger = new Trigger(DriverStation::isTeleopEnabled);
+        teleopTrigger.onTrue(runOnce(
+                "ZeroGyroscopeToPose",
+                () -> mDrive.zeroGyroscope(
+                        PoseEstimator.getInstance().getPose2d().getRotation())));
     }
 
     public Optional<Command> getAutonomousCommand() {

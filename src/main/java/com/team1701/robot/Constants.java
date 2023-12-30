@@ -132,11 +132,11 @@ public final class Constants {
             kFastTrapezoidalKinematicLimits = new KinematicLimits(
                     kMaxVelocityMetersPerSecond * 0.8,
                     kMaxVelocityMetersPerSecond * 0.8 / 1.5,
-                    kFastKinematicLimits.kMaxSteeringVelocity);
+                    kFastKinematicLimits.maxSteeringVelocity());
             kSlowTrapezoidalKinematicLimits = new KinematicLimits(
                     kMaxVelocityMetersPerSecond * 0.4,
                     kMaxVelocityMetersPerSecond * 0.4 / 2.0,
-                    kFastKinematicLimits.kMaxSteeringVelocity);
+                    kFastKinematicLimits.maxSteeringVelocity());
 
             kPathFollowerConfig = new HolonomicPathFollowerConfig(
                     new PIDConstants(4.0, 0.0, 0.0),

@@ -9,13 +9,20 @@ public final class Configuration {
     private static final RobotType kRobot = RobotType.SIMULATION_BOT;
     private static final boolean kTuningEnabled = true;
 
+    private static boolean mInvalidRobotAlerted = false;
+
     static {
         LoggedTunableNumber.enableTuning(kTuningEnabled);
     }
 
     public static RobotType getRobot() {
         if (Robot.isReal() && kRobot == RobotType.SIMULATION_BOT) {
-            Alert.warning(Configuration.class, "Invalid robot configured. Using swerve bot as default.");
+            if (!mInvalidRobotAlerted) {
+                Alert.warning("Invalid robot configured. Using swerve bot as default.")
+                        .enable();
+                mInvalidRobotAlerted = true;
+            }
+
             return RobotType.SWERVE_BOT;
         }
 

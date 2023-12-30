@@ -14,6 +14,7 @@ import com.team1701.lib.util.TimeLockedBoolean;
 import com.team1701.lib.util.Util;
 import com.team1701.robot.Constants;
 import com.team1701.robot.estimation.PoseEstimator;
+import com.team1701.robot.subsystems.drive.SwerveModule.SwerveModuleIO;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -69,8 +70,8 @@ public class Drive extends SubsystemBase {
         for (var i = 0; i < mModules.length; i++) {
             var swerveModuleIO = moduleIOs[i];
 
-            swerveModuleIO.driveMotorIO.enablePositionSampling(mOdometryThread);
-            swerveModuleIO.steerMotorIO.enablePositionSampling(mOdometryThread);
+            swerveModuleIO.driveMotorIO().enablePositionSampling(mOdometryThread);
+            swerveModuleIO.steerMotorIO().enablePositionSampling(mOdometryThread);
 
             mModules[i] = new SwerveModule(i, moduleIOs[i]);
         }

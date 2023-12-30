@@ -11,8 +11,7 @@ public class REVAlert {
     }
 
     public <T> REVAlert(Class<T> deviceClass, int deviceId) {
-        mMessageFormat =
-                "[" + deviceClass.getSimpleName() + "] Failed to configure device " + deviceId + " with error %s";
+        mMessageFormat = "Failed to configure " + deviceClass.getSimpleName() + " " + deviceId + " with error %s";
         mAlert = Alert.error(String.format(mMessageFormat, REVLibError.kUnknown));
     }
 
