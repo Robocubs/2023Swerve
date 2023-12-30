@@ -22,11 +22,11 @@ public class DriveToPose extends Command {
     private static final double kModuleRadius = Constants.Drive.kModuleRadius;
     private static final KinematicLimits kMaxKinematicLimits = Constants.Drive.kFastTrapezoidalKinematicLimits;
     private static final LoggedTunableNumber kMaxVelocity =
-            new LoggedTunableNumber(kLoggingPrefix + "MaxVelocity", kMaxKinematicLimits.kMaxDriveVelocity);
+            new LoggedTunableNumber(kLoggingPrefix + "MaxVelocity", kMaxKinematicLimits.maxDriveVelocity());
     private static final LoggedTunableNumber kMaxAcceleration =
-            new LoggedTunableNumber(kLoggingPrefix + "MaxAcceleration", kMaxKinematicLimits.kMaxDriveVelocity / 2.0);
+            new LoggedTunableNumber(kLoggingPrefix + "MaxAcceleration", kMaxKinematicLimits.maxDriveVelocity() / 2.0);
     private static final LoggedTunableNumber kMaxAngularVelocity = new LoggedTunableNumber(
-            kLoggingPrefix + "MaxAngularVelocity", kMaxKinematicLimits.kMaxDriveVelocity / kModuleRadius);
+            kLoggingPrefix + "MaxAngularVelocity", kMaxKinematicLimits.maxDriveVelocity() / kModuleRadius);
     private static final LoggedTunableNumber kMaxAngularAcceleration =
             new LoggedTunableNumber(kLoggingPrefix + "MaxAngularAcceleration", kMaxAngularVelocity.get() / 2.0);
     private static final LoggedTunableNumber kTranslationKp =
@@ -109,11 +109,11 @@ public class DriveToPose extends Command {
                 || kRotationKi.hasChanged(hash)
                 || kRotationKd.hasChanged(hash)) {
             mTranslationProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(
-                    Math.min(kMaxVelocity.get(), mKinematicLimits.kMaxDriveVelocity),
-                    Math.min(kMaxAcceleration.get(), mKinematicLimits.kMaxDriveAcceleration)));
+                    Math.min(kMaxVelocity.get(), mKinematicLimits.maxDriveVelocity()),
+                    Math.min(kMaxAcceleration.get(), mKinematicLimits.maxDriveAcceleration())));
             mRotationProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(
-                    Math.min(kMaxAngularVelocity.get(), mKinematicLimits.kMaxDriveVelocity / kModuleRadius),
-                    Math.min(kMaxAngularAcceleration.get(), mKinematicLimits.kMaxDriveAcceleration / kModuleRadius)));
+                    Math.min(kMaxAngularVelocity.get(), mKinematicLimits.maxDriveVelocity() / kModuleRadius),
+                    Math.min(kMaxAngularAcceleration.get(), mKinematicLimits.maxDriveAcceleration() / kModuleRadius)));
             mTranslationController.setPID(kTranslationKp.get(), kTranslationKi.get(), kTranslationKd.get());
             mRotationController.setPID(kRotationKp.get(), kRotationKi.get(), kRotationKd.get());
         }

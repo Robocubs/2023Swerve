@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import com.team1701.lib.alerts.Alert;
 import com.team1701.lib.cameras.AprilTagCameraIO.PhotonCameraInputs;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -30,6 +31,7 @@ public class AprilTagCamera {
     private final ArrayList<Consumer<EstimatedRobotPose>> mEstimatedPoseConsumers = new ArrayList<>();
     private final ArrayList<Predicate<PhotonTrackedTarget>> mTargetFilters = new ArrayList<>();
     private final ArrayList<Predicate<Pose3d>> mPoseFilters = new ArrayList<>();
+    private final Alert mDisconnectedAlert;
 
     public AprilTagCamera(
             String cameraName,
@@ -46,6 +48,7 @@ public class AprilTagCamera {
         mRobotToCamPose = robotToCamPose;
         mFieldLayoutSupplier = fieldLayoutSupplier;
         mRobotPoseSupplier = robotPoseSupplier;
+        mDisconnectedAlert = Alert.error("Camera " + cameraName + " disconnected");
     }
 
     public void periodic() {
@@ -56,6 +59,7 @@ public class AprilTagCamera {
         var filteredPipelineResult = filterTargets(pipelineResult);
         var robotPose = mRobotPoseSupplier.get();
 
+        mDisconnectedAlert.setEnabled(!mCameraInputs.isConnected);
         Logger.recordOutput(mLoggingPrefix + "TargetPoses", getFieldRelativeTargetPoses(pipelineResult, robotPose));
         Logger.recordOutput(
                 mLoggingPrefix + "FilteredTargetPoses", getFieldRelativeTargetPoses(filteredPipelineResult, robotPose));

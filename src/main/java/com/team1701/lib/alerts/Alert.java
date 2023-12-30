@@ -15,46 +15,24 @@ public class Alert {
     private String mMessage;
     private boolean mEnabled;
     private long mLastEnabledTimestamp;
+    private boolean mLogResolution;
 
     public static Alert info(String message) {
         return new Alert(AlertType.INFO, message);
-    }
-
-    public static Alert info(Object owner, String message) {
-        return info(owner.getClass(), message);
-    }
-
-    public static <T> Alert info(Class<T> ownerClass, String message) {
-        return info("[" + ownerClass.getSimpleName() + "] " + message);
     }
 
     public static Alert warning(String message) {
         return new Alert(AlertType.WARNING, message);
     }
 
-    public static Alert warning(Object owner, String message) {
-        return warning(owner.getClass(), message);
-    }
-
-    public static <T> Alert warning(Class<T> ownerClass, String message) {
-        return warning("[" + ownerClass.getSimpleName() + "] " + message);
-    }
-
     public static Alert error(String message) {
         return new Alert(AlertType.ERROR, message);
     }
 
-    public static Alert error(Object owner, String message) {
-        return error(owner.getClass(), message);
-    }
-
-    public static <T> Alert error(Class<T> ownerClass, String message) {
-        return error("[" + ownerClass.getSimpleName() + "] " + message);
-    }
-
-    private Alert(AlertType type, String message) {
+    Alert(AlertType type, String message) {
         mType = type;
         mMessage = message;
+        mLogResolution = type != AlertType.INFO;
 
         synchronized (Alert.class) {
             if (mSendableAlerts == null) {
@@ -66,25 +44,37 @@ public class Alert {
         mSendableAlerts.add(this);
     }
 
+    public Alert withResolutionLogging(boolean shouldLogResolution) {
+        mLogResolution = shouldLogResolution;
+        return this;
+    }
+
     public void setMessage(String message) {
-        var modified = !message.equals(mMessage);
+        if (message.equals(mMessage)) {
+            return;
+        }
+
         mMessage = message;
-        if (mEnabled && modified) {
+
+        if (mEnabled) {
             logToConsole();
             mSendableAlerts.invalidateCache();
         }
     }
 
     public void setEnabled(boolean enabled) {
-        if (enabled && !mEnabled) {
-            logToConsole();
-        }
-
-        if (mEnabled != enabled) {
-            mSendableAlerts.invalidateCache();
+        if (enabled == mEnabled) {
+            return;
         }
 
         mEnabled = enabled;
+        mSendableAlerts.invalidateCache();
+
+        if (enabled) {
+            logToConsole();
+        } else if (mLogResolution) {
+            System.out.println("INFO: [RESOLVED] " + mMessage);
+        }
     }
 
     public void enable() {
@@ -109,18 +99,18 @@ public class Alert {
         }
     }
 
-    static class SendableAlerts implements Sendable {
+    private static class SendableAlerts implements Sendable {
         private final List<Alert> mAlerts = new ArrayList<>();
         private String[] mInfoMessages = new String[] {};
         private String[] mWarningMessages = new String[] {};
         private String[] mErrorMessages = new String[] {};
         private boolean mCacheValid = true;
 
-        public void add(Alert alert) {
+        private void add(Alert alert) {
             mAlerts.add(alert);
         }
 
-        public void invalidateCache() {
+        private void invalidateCache() {
             mCacheValid = false;
         }
 

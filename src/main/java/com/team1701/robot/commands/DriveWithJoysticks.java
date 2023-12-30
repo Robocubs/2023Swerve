@@ -45,15 +45,15 @@ public class DriveWithJoysticks extends Command {
         var rotation = MathUtil.applyDeadband(mRotation.getAsDouble(), Constants.Controls.kDriverDeadband);
 
         var rotationRadiansPerSecond = Math.copySign(rotation * rotation, rotation)
-                * kinematicLimits.kMaxDriveVelocity
+                * kinematicLimits.maxDriveVelocity()
                 / Constants.Drive.kModuleRadius;
 
         if (magnitude < Constants.Controls.kDriverDeadband) {
             mDrive.setVelocity(new ChassisSpeeds(0.0, 0.0, rotationRadiansPerSecond));
         } else {
             mDrive.setVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(
-                    throttle * kinematicLimits.kMaxDriveVelocity,
-                    strafe * kinematicLimits.kMaxDriveVelocity,
+                    throttle * kinematicLimits.maxDriveVelocity(),
+                    strafe * kinematicLimits.maxDriveVelocity(),
                     rotationRadiansPerSecond,
                     mDrive.getFieldRelativeHeading()));
         }
