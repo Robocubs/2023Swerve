@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.team1701.lib.cameras.AprilTagCamera;
-import com.team1701.lib.cameras.AprilTagCameraIO;
+import com.team1701.lib.drivers.cameras.AprilTagCamera;
+import com.team1701.lib.drivers.cameras.AprilTagCameraIO;
 import com.team1701.robot.Constants;
 import com.team1701.robot.Robot;
 import com.team1701.robot.estimation.PoseEstimator;
@@ -35,6 +35,7 @@ public class Vision extends SubsystemBase {
                 cameraIOFrontLeft,
                 Constants.Vision.kRobotToFrontLeftCamPose,
                 Constants.Vision.kPoseStrategy,
+                Constants.Vision.kFallbackPoseStrategy,
                 fieldLayoutSupplier,
                 mPoseEstimator::getPose3d));
         mCameras.add(new AprilTagCamera(
@@ -42,6 +43,7 @@ public class Vision extends SubsystemBase {
                 cameraIOFrontRight,
                 Constants.Vision.kRobotToFrontRightCamPose,
                 Constants.Vision.kPoseStrategy,
+                Constants.Vision.kFallbackPoseStrategy,
                 fieldLayoutSupplier,
                 mPoseEstimator::getPose3d));
         mCameras.add(new AprilTagCamera(
@@ -49,6 +51,7 @@ public class Vision extends SubsystemBase {
                 cameraIOBackLeft,
                 Constants.Vision.kRobotToBackLeftCamPose,
                 Constants.Vision.kPoseStrategy,
+                Constants.Vision.kFallbackPoseStrategy,
                 fieldLayoutSupplier,
                 mPoseEstimator::getPose3d));
         mCameras.add(new AprilTagCamera(
@@ -56,6 +59,7 @@ public class Vision extends SubsystemBase {
                 cameraIOBackRight,
                 Constants.Vision.kRobotToBackRightCamPose,
                 Constants.Vision.kPoseStrategy,
+                Constants.Vision.kFallbackPoseStrategy,
                 fieldLayoutSupplier,
                 mPoseEstimator::getPose3d));
 

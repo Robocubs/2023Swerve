@@ -166,6 +166,7 @@ public final class Constants {
                 new Transform3d(new Translation3d(-0.3, -0.3, 0.2), new Rotation3d(0, 0, Units.degreesToRadians(-135)));
 
         public static final double kMaxPoseAmbiguity = 0.03;
-        public static final PoseStrategy kPoseStrategy = PoseStrategy.AVERAGE_BEST_TARGETS;
+        public static final PoseStrategy kPoseStrategy = PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
+        public static final PoseStrategy kFallbackPoseStrategy = PoseStrategy.LOWEST_AMBIGUITY;
     }
 }

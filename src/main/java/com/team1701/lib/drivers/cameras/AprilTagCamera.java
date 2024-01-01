@@ -1,4 +1,4 @@
-package com.team1701.lib.cameras;
+package com.team1701.lib.drivers.cameras;
 
 import java.util.ArrayList;
 import java.util.function.Consumer;
@@ -6,7 +6,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import com.team1701.lib.alerts.Alert;
-import com.team1701.lib.cameras.AprilTagCameraIO.PhotonCameraInputs;
+import com.team1701.lib.drivers.cameras.AprilTagCameraIO.PhotonCameraInputs;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -38,13 +38,14 @@ public class AprilTagCamera {
             AprilTagCameraIO cameraIO,
             Transform3d robotToCamPose,
             PoseStrategy poseStrategy,
+            PoseStrategy fallbackPoseStrategy,
             Supplier<AprilTagFieldLayout> fieldLayoutSupplier,
             Supplier<Pose3d> robotPoseSupplier) {
         mCameraIO = cameraIO;
         mCameraInputs = new PhotonCameraInputs();
         mLoggingPrefix = "Camera/" + cameraName + "/";
         mPoseEstimator = new PhotonPoseEstimator(fieldLayoutSupplier.get(), poseStrategy, null, robotToCamPose);
-        mPoseEstimator.setMultiTagFallbackStrategy(poseStrategy);
+        mPoseEstimator.setMultiTagFallbackStrategy(fallbackPoseStrategy);
         mRobotToCamPose = robotToCamPose;
         mFieldLayoutSupplier = fieldLayoutSupplier;
         mRobotPoseSupplier = robotPoseSupplier;
