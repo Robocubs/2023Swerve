@@ -1,4 +1,4 @@
-package com.team1701.lib.cameras;
+package com.team1701.lib.drivers.cameras;
 
 import edu.wpi.first.math.geometry.Transform3d;
 import org.photonvision.PhotonCamera;

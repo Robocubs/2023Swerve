@@ -1,13 +1,16 @@
-package com.team1701.lib.cameras;
+package com.team1701.lib.drivers.cameras;
 
 import java.util.ArrayList;
 import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 import edu.wpi.first.math.geometry.Transform3d;
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
+import org.photonvision.targeting.MultiTargetPNPResults;
+import org.photonvision.targeting.PNPResults;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
@@ -53,6 +56,19 @@ public interface AprilTagCameraIO {
 
                 table.put(targetNamespace + "DetectedCorners", detectedCorners);
             }
+
+            var multiTagResult = pipelineResult.getMultiTagResult();
+            table.put("MultiTag/PnpResult/IsPresent", multiTagResult.estimatedPose.isPresent);
+            table.put("MultiTag/PnpResult/BestPose", multiTagResult.estimatedPose.best);
+            table.put("MultiTag/PnpResult/BestPoseReprojectionError", multiTagResult.estimatedPose.bestReprojErr);
+            table.put("MultiTag/PnpResult/AltPose", multiTagResult.estimatedPose.alt);
+            table.put("MultiTag/PnpResult/AltPoseReprojectionError", multiTagResult.estimatedPose.altReprojErr);
+            table.put("MultiTag/PnpResult/Ambiguity", multiTagResult.estimatedPose.ambiguity);
+            table.put(
+                    "MultiTag/TargetIdsUsed",
+                    multiTagResult.fiducialIDsUsed.stream()
+                            .mapToInt(Integer::intValue)
+                            .toArray());
         }
 
         @Override
@@ -95,7 +111,21 @@ public interface AprilTagCameraIO {
                 targets.add(trackedTarget);
             }
 
-            pipelineResult = new PhotonPipelineResult(latency, targets);
+            var multiTagPnpResultPresent = table.get("MultiTag/PnpResult/IsPresent", false);
+            var multiTagPnpResult = multiTagPnpResultPresent
+                    ? new PNPResults(
+                            table.get("MultiTag/PnpResult/BestPose", new Transform3d()),
+                            table.get("MultiTag/PnpResult/AltPose", new Transform3d()),
+                            table.get("MultiTag/PnpResult/Ambiguity", 0.0),
+                            table.get("MultiTag/PnpResult/BestPoseReprojectionError", 0.0),
+                            table.get("MultiTag/PnpResult/AltPoseReprojectionError", 0.0))
+                    : new PNPResults();
+            var multiTagTargetIdsUsed = IntStream.of(table.get("MultiTag/TargetIdsUsed", new int[] {}))
+                    .boxed()
+                    .toList();
+            var multiTargetResult = new MultiTargetPNPResults(multiTagPnpResult, multiTagTargetIdsUsed);
+
+            pipelineResult = new PhotonPipelineResult(latency, targets, multiTargetResult);
             pipelineResult.setTimestampSeconds(timestamp);
 
             isConnected = table.get("IsConnected", false);

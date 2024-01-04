@@ -55,6 +55,7 @@
     "dtheta",
     "Holonomic",
     "Odometry",
+    "Reprojection",
     "Setpoint",
     "Setpoints",
     "teleop",
