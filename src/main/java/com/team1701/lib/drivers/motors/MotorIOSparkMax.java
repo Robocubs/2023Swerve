@@ -48,13 +48,13 @@ public class MotorIOSparkMax implements MotorIO {
 
     @Override
     public void setPositionControl(Rotation2d position) {
-        mController.setReference(position.getRotations(), CANSparkMax.ControlType.kPosition);
+        mController.setReference(position.getRotations() / mReduction, CANSparkMax.ControlType.kPosition);
     }
 
     @Override
     public void setVelocityControl(double velocityRadiansPerSecond) {
         mController.setReference(
-                Units.radiansPerSecondToRotationsPerMinute(velocityRadiansPerSecond),
+                Units.radiansPerSecondToRotationsPerMinute(velocityRadiansPerSecond) / mReduction,
                 CANSparkMax.ControlType.kVelocity);
     }
 

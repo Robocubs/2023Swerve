@@ -58,6 +58,15 @@ public final class Constants {
         public static final LoggedTunableNumber kSteerKp = new LoggedTunableNumber("Drive/Module/SteerKp");
         public static final LoggedTunableNumber kSteerKd = new LoggedTunableNumber("Drive/Module/SteerKd");
 
+        public static final LoggedTunableNumber kAbsoluteEncoderFL =
+                new LoggedTunableNumber("Drive/Module/AbsoluteEncoderFL", 4.89);
+        public static final LoggedTunableNumber kAbsoluteEncoderFR =
+                new LoggedTunableNumber("Drive/Module/AbsoluteEncoderFR", 5.15);
+        public static final LoggedTunableNumber kAbsoluteEncoderBL =
+                new LoggedTunableNumber("Drive/Module/AbsoluteEncoderBL", 2.96);
+        public static final LoggedTunableNumber kAbsoluteEncoderBR =
+                new LoggedTunableNumber("Drive/Module/AbsoluteEncoderBR", 1.11);
+
         public static final HolonomicPathFollowerConfig kPathFollowerConfig;
 
         static {

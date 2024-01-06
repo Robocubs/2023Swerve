@@ -7,8 +7,9 @@ import edu.wpi.first.wpilibj.AnalogEncoder;
 public class EncoderIOAnalog implements EncoderIO {
     private final AnalogEncoder mEncoder;
 
-    public EncoderIOAnalog(int channel) {
+    public EncoderIOAnalog(int channel, double offset) {
         mEncoder = new AnalogEncoder(channel);
+        setPositionOffset(Rotation2d.fromRadians(offset));
     }
 
     @Override

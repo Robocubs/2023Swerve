@@ -7,7 +7,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.team1701.lib.alerts.TriggeredAlert;
 import com.team1701.lib.drivers.cameras.AprilTagCameraIO;
-import com.team1701.lib.drivers.cameras.AprilTagCameraIOPhotonCamera;
 import com.team1701.lib.drivers.encoders.EncoderIO;
 import com.team1701.lib.drivers.encoders.EncoderIOAnalog;
 import com.team1701.lib.drivers.gyros.GyroIO;
@@ -53,19 +52,19 @@ public class RobotContainer {
                         new SwerveModuleIO(
                                 DriveMotorFactory.createDriveMotorIOSparkMax(10),
                                 DriveMotorFactory.createSteerMotorIOSparkMax(11),
-                                new EncoderIOAnalog(0)),
+                                new EncoderIOAnalog(0, Constants.Drive.kAbsoluteEncoderFL.get())),
                         new SwerveModuleIO(
                                 DriveMotorFactory.createDriveMotorIOSparkMax(12),
                                 DriveMotorFactory.createSteerMotorIOSparkMax(13),
-                                new EncoderIOAnalog(1)),
+                                new EncoderIOAnalog(1, Constants.Drive.kAbsoluteEncoderFR.get())),
                         new SwerveModuleIO(
                                 DriveMotorFactory.createDriveMotorIOSparkMax(16),
                                 DriveMotorFactory.createSteerMotorIOSparkMax(17),
-                                new EncoderIOAnalog(3)),
+                                new EncoderIOAnalog(3, Constants.Drive.kAbsoluteEncoderBL.get())),
                         new SwerveModuleIO(
                                 DriveMotorFactory.createDriveMotorIOSparkMax(14),
                                 DriveMotorFactory.createSteerMotorIOSparkMax(15),
-                                new EncoderIOAnalog(2)),
+                                new EncoderIOAnalog(2, Constants.Drive.kAbsoluteEncoderBR.get())),
                     }));
                     break;
                 case SIMULATION_BOT:
@@ -84,11 +83,11 @@ public class RobotContainer {
                     break;
             }
 
-            vision = Optional.of(new Vision(
-                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kFrontLeftCameraName),
-                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kFrontRightCameraName),
-                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kBackLeftCameraName),
-                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kBackRightCameraName)));
+            // vision = Optional.of(new Vision(
+            //         new AprilTagCameraIOPhotonCamera(Constants.Vision.kFrontLeftCameraName),
+            //         new AprilTagCameraIOPhotonCamera(Constants.Vision.kFrontRightCameraName),
+            //         new AprilTagCameraIOPhotonCamera(Constants.Vision.kBackLeftCameraName),
+            //         new AprilTagCameraIOPhotonCamera(Constants.Vision.kBackRightCameraName)));
         }
 
         this.mDrive = drive.orElseGet(() -> new Drive(
