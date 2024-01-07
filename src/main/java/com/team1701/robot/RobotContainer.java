@@ -7,6 +7,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.team1701.lib.alerts.TriggeredAlert;
 import com.team1701.lib.drivers.cameras.AprilTagCameraIO;
+import com.team1701.lib.drivers.cameras.AprilTagCameraIOPhotonCamera;
 import com.team1701.lib.drivers.encoders.EncoderIO;
 import com.team1701.lib.drivers.encoders.EncoderIOAnalog;
 import com.team1701.lib.drivers.gyros.GyroIO;
@@ -83,11 +84,11 @@ public class RobotContainer {
                     break;
             }
 
-            // vision = Optional.of(new Vision(
-            //         new AprilTagCameraIOPhotonCamera(Constants.Vision.kFrontLeftCameraName),
-            //         new AprilTagCameraIOPhotonCamera(Constants.Vision.kFrontRightCameraName),
-            //         new AprilTagCameraIOPhotonCamera(Constants.Vision.kBackLeftCameraName),
-            //         new AprilTagCameraIOPhotonCamera(Constants.Vision.kBackRightCameraName)));
+            vision = Optional.of(new Vision(
+                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kFrontLeftCameraName),
+                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kFrontRightCameraName),
+                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kBackLeftCameraName),
+                    new AprilTagCameraIOPhotonCamera(Constants.Vision.kBackRightCameraName)));
         }
 
         this.mDrive = drive.orElseGet(() -> new Drive(
